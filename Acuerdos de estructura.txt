@@ -1,0 +1,59 @@
+MENÚ PRINCIPAL
+├── Opciones Operativas
+│   ├── Gestión de catálogo (inclusión en lote + ver catálogo)
+│   ├── Gestión de usuarios (CRUD)
+│   ├── Historial de préstamos (por rango de fechas)
+│   ├── Vencimiento de préstamos (vencidos / próximos a vencer 0–5 días)
+│   ├── Estadísticas (A, B, C, D)
+│   └── Volver
+├── Opciones Generales
+│   ├── Búsqueda simple
+│   ├── Búsqueda avanzada
+│   ├── Préstamo de ejemplares
+│   ├── Devolución de ejemplares
+│   └── Volver
+└── Salir (persiste todo en JSON)
+
+Modelo de datos: (structs / archivos JSON)
+- Libro: nombre (único), autor, año, género, resumen, cantidad.
+- Ejemplar: id de ejemplar (generado según cantidad), nombre del libro asociado, estado (disponible / prestado).
+- Usuario: número de identificación (único), nombre, dirección.
+- Préstamo: id de préstamo, usuario, fecha inicio, fecha entrega, fecha devolución real, estado (activo / vencido / finalizado), lista de ejemplares, entrega tardía (sí/no), monto.
+
+Archivos Json :
+catalogo.json
+ejemplares.json
+usuarios.json
+prestamos.json.
+
+Lista de requerimientos:
+1. Descargar/integrar librería cJSON.
+2. Definir los struct: Libro, Ejemplar, Usuario, Préstamo.
+3. Crear los archivos .h (headers) y las macros (tarifas, rutas, tamaños).
+4. Definir cómo se ven los archivos JSON: catalogo.json, ejemplares.json, usuarios.json, prestamos.json.
+5. Funciones para leer y guardar cada archivo JSON.
+6. Funciones de utilidad: arreglos dinámicos (malloc/realloc/free), leer datos de consola, manejo de fechas.
+7. main.c con el menú principal y los dos submenús, que se repiten después de cada opción y permiten volver.
+
+8. Gestión de catálogo: incluir libros en lote desde un archivo (separados por #), sin repetir nombre, generar un ID por cada ejemplar según la cantidad.
+7.Gestión de catálogo: mostrar reporte de los registros que NO se procesaron.
+8. Gestión de catálogo: ver todo el catálogo.
+9. Gestión de usuarios: crear, ver, modificar y eliminar (id, nombre, dirección); no repetir id; no borrar usuario con préstamos.
+10. Historial de préstamos: pedir rango de fechas y listar préstamos (id, usuario, estado, ejemplares, si hubo entrega tardía).
+11.Vencimiento de préstamos: listar los vencidos y los que vencen en 0 a 5 días (usando la fecha del sistema).
+12.
+    1. Estadísticas A: top 3 producciones más prestadas.
+    2. Estadísticas B: top 3 usuarios con más préstamos.
+    3. Estadísticas C: top 5 mes-año con mayor monto recaudado.
+    4. Estadísticas D: género con más y con menos préstamos.
+
+
+13.Búsqueda simple: un texto, técnica "contiene" con "o" en nombre, autor y resumen.
+14. Búsqueda avanzada: por nombre/autor/género/resumen, con "contiene" o "exacta", y operador "y"/"o".
+15.Préstamo de ejemplares: pedir usuario, fechas y ejemplares; verificar disponibilidad; bajar stock; generar comprobante.
+16. Devolución de ejemplar: pedir id de préstamo y fecha; calcular monto según tabla de tarifas; actualizar estados; comprobante.
+17. Salir: guardar todo en los archivos JSON.
+
+18. Comentarios en cada función (entradas, salidas, restricciones, objetivo).
+19. Documentación externa: portada, manual de usuario, pruebas con screenshots, descripción del problema, diseño, librerías usadas, lista de cotejo, justificación de punteros y modularidad, bitácora de git.
+20. Archivo info.txt con los datos del curso y los estudiantes.
