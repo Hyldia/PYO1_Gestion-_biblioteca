@@ -1,0 +1,11 @@
+[{
+		"Identificacion":	"12345",
+		"nombre":	"maria",
+		"Direccion":	"limon",
+		"activo":	1
+	}, {
+		"Identificacion":	"34567",
+		"nombre":	"juan",
+		"Direccion":	"cartago",
+		"activo":	1
+	}]
