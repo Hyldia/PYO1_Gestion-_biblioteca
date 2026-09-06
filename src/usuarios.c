@@ -1,16 +1,38 @@
 /*
-*Administra los usuarios del sistema
+* Administra los usuarios del sistema
+* Se implementan todas las funciones para la gestion de los usuarios
+
+* Para acceder a los archivos JSON se hace por medio de persistencia.h 
 */
+
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h> //para valida identificación
+#include <ctype.h> //para valida identificacion
 #include "usuarios.h"
 #include "persistencia.h"
 #include "tipos.h"
 
-// Comprobar la identificación que iongresa el usuario
+/*
+ * Comprueba que la identificacion:
+ * - Tenga exactamente 5 digitos y que este formado solo por numeros.
+ *
+ * Retorna:
+ * 1 Si es valida.
+ * 0 Si es invalida.
+ */
 int verificarIdentificacion(const char *identificacion){
-    if(strlen(identificacion) != 5){//La identifiación debe tener una longitud de 5 digitos
+    // No permitir espacios ni cadenas vacias
+    if(identificacion == NULL || identificacion[0] == 0){
+        return 0;
+    }
+    for(int indice = 0; identificacion[indice] != 0; indice++){ //No aceptar espacios
+        if(identificacion[indice] == ' '){
+            return 0;
+        }
+    }
+
+    //La identifiación debe tener una longitud de 5 digitos
+    if(strlen(identificacion) != 5){
         return 0;
     } 
     for(int indice = 0; indice < 5; indice++){
@@ -21,17 +43,46 @@ int verificarIdentificacion(const char *identificacion){
     return 1;
 }
 
+/*
+ * Verifica que un campo de texto no este vacio ni compuesto solo por espacios en blanco.
+ 
+ * Retorna:
+ * 1 Si el campo contiene informacion valida.
+ * 0 Si el campo esta vacío o solo tiene espacios.
+ */
+int validarCampoVacio(const char *texto){
+    if(texto == NULL){
+        return 0;
+    }
+    //Verificar si todos los caractres son espacios
+    while(*texto != 0) {
+        if(!isspace(*texto)){ // No haya espaio vacio
+            return 1; // Hay cntenido en el texto
+        }
+        texto++;
+    }
+    return 0;
+}
+
+/*
+* Solicita los datos del usuario
+* Verifica que la identificacion sea valida y que no exista previamente.
+* Despues guarda el usuario en el JSON.
+*/
 void agregarUsuario() {
     Usuario usuario;
+
     printf("Identificacion (5 digitos): ");
     fgets(usuario.identificacion, MAX_IDENTIFICACION, stdin); //Pide la identificacion del usuario y lo guarda con fgets
     usuario.identificacion[strcspn(usuario.identificacion,"\n")] = 0; //Elimina el salto de línea al final de la identificacion
     // Comprobar identifiacion
     if(!verificarIdentificacion(usuario.identificacion)){
+        printf("-----------------------------\n");
         printf("Error: la identificacion debe tener 5 numeros.\n");
         return;
     }
     if(existeIdentificacionJSON(usuario.identificacion)){
+        printf("-----------------------------\n");
         printf("Error: la identificacion ya existe.\n");
         return;
     }
@@ -39,18 +90,67 @@ void agregarUsuario() {
     printf("Nombre:");
     fgets(usuario.nombre, MAX_NOMBRE, stdin); //Pide el nombre del usuario y lo guarda con fgets
     usuario.nombre[strcspn(usuario.nombre, "\n")] = 0; //Elimina el salto de línea al final del nombre
-
+    // Comprobar texto
+    if(!validarCampoVacio(usuario.nombre)){
+        printf("-----------------------------\n");
+        printf("Error: El nombre no puede estar vacio.\n");
+        return;
+    }
+    
     printf("Direccion:");
     fgets(usuario.direccion, MAX_DIRECCION, stdin); //Pide el direccion del usuario y lo guarda con fgets
     usuario.direccion[strcspn(usuario.direccion, "\n")] = 0;
+    // Comprobar texto
+    if(!validarCampoVacio(usuario.direccion)){
+        printf("-----------------------------\n");
+        printf("Error: La direccion no puede sestar vacia.\n");
+        return;
+    }
     
     usuario.activo = 1; //Marca al usuario como activo
 
     guardarUsuariosJSON(usuario); //Llama a la función para guardar el usuario en el archivo JSON
 }
 
-
+/*
+ * Muestra todos los usuarios registrados en el sistema.
+ */
 void mostrarUsuarios() {
     mostrarUsuariosJSON();
+}
+
+/*
+ * Busca el usuario por su identificacion y actualiza su direccion.
+ */
+void modificarUsuario(){
+    Usuario usuario; // Crear variable de tipo usuario para guardar los datos ingresados
+    
+    printf("Ingrese la identificacion del usuario que desea modifica: ");
+    fgets(usuario.identificacion, MAX_IDENTIFICACION, stdin); //Pide la identificacion del usuario y lo guarda con fgets
+    usuario.identificacion[strcspn(usuario.identificacion, "\n")] = 0; //Elimina el salto de línea al final de la identificacion
+
+    // Verifica que la identificación tenga 5 numeros
+    if(!verificarIdentificacion(usuario.identificacion)){
+        printf("-----------------------------\n");
+        printf("Error: La identificacion debe tener 5 numeros.\n");
+        return;
+    }
+    printf("Ingresa la nueva direccion:");
+    fgets(usuario.direccion, MAX_DIRECCION, stdin); //Pide el direccion del usuario y lo guarda con fgets
+    usuario.direccion[strcspn(usuario.direccion, "\n")] = 0;//Elimina el salto de línea al final de la direccion
+    // Comprobar texto
+    if(!validarCampoVacio(usuario.direccion)){
+        printf("-----------------------------\n");
+        printf("Error: La direccion no puede estar vacia.\n");
+        return;
+    }
+    // Llama la funcio modificar JSON para que busque el usaurio y actualice os datos 
+    if(modificarUsuarioJSON(usuario)){
+        printf("-----------------------------\n");
+        printf("La direccion fue modificada con exito. \n");
+    } else{
+        printf("-----------------------------\n");
+        printf("Usuario no encontrado.\n");
+    }
 }
 
