@@ -1,5 +1,6 @@
 /*
-* structs compartidos por varios modulos
+* Tinee los structs(estruturas) de datos compartidos por varios modulos del sistema
+* Define el tipo de información que se va a usar en los distinyos modulos
 */
 
 #ifndef TIPOS_H 

@@ -1,11 +1,11 @@
 [{
 		"Identificacion":	"12345",
 		"nombre":	"maria",
-		"Direccion":	"limon",
+		"direccion":	"Guapiles",
 		"activo":	1
 	}, {
 		"Identificacion":	"34567",
 		"nombre":	"juan",
-		"Direccion":	"cartago",
+		"direccion":	"Heredia",
 		"activo":	1
 	}]

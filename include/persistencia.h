@@ -1,5 +1,5 @@
 /*
-* funciones necesarias para guardar y cargar JSON
+* Se declaran las funciones necesarias para guardar y cargar la informacion de los archivos JSON
 */
 
 #ifndef PERSISTENCIA_H
@@ -9,5 +9,7 @@
 void guardarUsuariosJSON(Usuario usuario);
 void mostrarUsuariosJSON();
 int existeIdentificacionJSON(const char *identificacion);
+int modificarUsuarioJSON(Usuario usuario);
+//int eliminarUsuarioJSON(const char *identificacion);
 
 #endif

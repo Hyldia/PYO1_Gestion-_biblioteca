@@ -16,6 +16,7 @@ int main() {
         printf("\n=== USUARIOS ===\n");
         printf("1. Agregar usuario\n");
         printf("2. Listar usuarios\n");
+        printf("3. Modificar usuario\n");
         printf("0. Salir\n");
 
         printf("Opcion: ");
@@ -24,13 +25,14 @@ int main() {
         getchar();
 
         switch(opcion) {
-
             case 1:
                 agregarUsuario();
                 break;
-
             case 2:
                 mostrarUsuarios();
+                break;
+            case 3:
+                modificarUsuario();
                 break;
         }
 
