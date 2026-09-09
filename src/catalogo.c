@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <cjson/cJSON.h>
+
 #include "catalogo.h"
 #include "persistencia.h"
 #include "tipos.h"
@@ -155,11 +157,73 @@ void agregarLote(void) {
     printf("==================================================\n");
 }
 
+
+/*
+*muestra todos las producciones del catalogo y sus detalles
+*/
 void mostrarCatalogo(void) {
-    printf("\n--- Catálogo de Producciones ---\n");
-    printf("(Funcionalidad en desarrollo)\n");
+    FILE *archivo = fopen("data/catalogo.json", "r");// Abrir el archivo JSON en modo lectura
+    //valida que el archivo exista o no tenga un error de ruta
+    if (archivo == NULL) {// Si el archivo JSON no existe, mostrar un mensaje de error y salir
+        printf("\n--------------------------------------------------\n");
+        printf("No hay producciones registradas en el catálogo.\n");
+        printf("--------------------------------------------------\n");
+        return;
+    }
+
+    char contenedor[20000]; // Para almacenar el JSON
+    size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) - 1, archivo);//leer el contenido del archivo JSON
+    contenedor[largoArchivo] = '\0';//Agregar un caracter nulo al final del buffer
+    fclose(archivo);
+
+    cJSON *raiz = cJSON_Parse(contenedor);// Convertir el contenido del contenedor a un objeto JSON
+    //valida que el archivo no este vacio o tenga un error de lectura
+    if (raiz == NULL) {// Si el archivo JSON no existe o esta vacio, meustra un mensaje de error y se sale
+        printf("\n--------------------------------------------------\n");
+        printf("Error al leer el archivo de catálogo o está vacío.\n");
+        printf("--------------------------------------------------\n");
+        return;
+    }
+
+    int cantidad = cJSON_GetArraySize(raiz);// Obtener la cantidad de producciones en el array de producciones
+    //valida que el catalogo no este vacio
+    if (cantidad == 0) {//si es = a 0 retorna que el catalogo esta vacio
+        printf("\n--------------------------------------------------\n");
+        printf("El catálogo está vacío.\n");
+        printf("--------------------------------------------------\n");
+        cJSON_Delete(raiz);
+        return;
+    }
+
+    printf("\n==================================================\n");
+    printf("              CATÁLOGO DE PRODUCCIONES            \n");
+    printf("==================================================\n");
+
+    for (int i = 0; i < cantidad; i++) {//Recorre sobre cada produccion en el array de producciones
+        cJSON *prod = cJSON_GetArrayItem(raiz, i);
+
+        cJSON *nombre = cJSON_GetObjectItem(prod, "nombre");
+        cJSON *autor = cJSON_GetObjectItem(prod, "autor");
+        cJSON *anio = cJSON_GetObjectItem(prod, "anio_publicacion");
+        cJSON *genero = cJSON_GetObjectItem(prod, "genero");
+        cJSON *resumen = cJSON_GetObjectItem(prod, "resumen");
+        cJSON *cant = cJSON_GetObjectItem(prod, "cantidad");
+
+        printf("Título:     %s\n", nombre ? nombre->valuestring : "N/A");//Imprime el nombre de la produccion o "N/A" si es nulo
+        printf("Autor:      %s\n", autor ? autor->valuestring : "N/A");//Imprime el autor de la produccion o "N/A" si es nulo
+        printf("Año:        %d\n", anio ? anio->valueint : 0);//Imprime el año de la produccion o 0 si es nulo
+        printf("Género:     %s\n", genero ? genero->valuestring : "N/A");//Imprime el genero de la produccion o "N/A" si es nulo
+        printf("Cantidad:   %d ejemplares\n", cant ? cant->valueint : 0);//Imprime la cantidad de ejemplares de la produccion o 0 si es nulo
+        printf("Resumen:    %s\n", resumen ? resumen->valuestring : "N/A");//Imprime el resumen de la produccion o "N/A" si es nulo
+        printf("--------------------------------------------------\n");
+    }
+
+    cJSON_Delete(raiz);
 }
 
+/*
+*submenu:catalogo
+*/
 void menuCatalogo(void) {
     int opcion;
     while (1) {

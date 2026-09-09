@@ -230,18 +230,18 @@ int tieneRegistrosAsociados(const char *identificacion){
  * Retorna: 1 si existe, 0 si no existe o falla la lectura.
  */
 int existeProduccionJSON(const char *nombre) {
-    FILE *archivo = fopen("data/catalogo.json", "r");
+    FILE *archivo = fopen("data/catalogo.json", "r");// Abrir el archivo JSON en modo lectura
     if (archivo == NULL) return 0;
 
     char contenedor[10000];// Para almacenar el JSON
     size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) - 1, archivo);//leer el contenido del archivo JSON
-    contenedor[largoArchivo] = '\0';
+    contenedor[largoArchivo] = '\0'; //Agregar un caracter nulo al final del buffer
     fclose(archivo);
 
     cJSON *raiz = cJSON_Parse(contenedor);
     if (raiz == NULL) return 0;
 
-    int cantidad = cJSON_GetArraySize(raiz);
+    int cantidad = cJSON_GetArraySize(raiz);// Obtener la cantidad de producciones en el array de producciones
     for (int i = 0; i < cantidad; i++) {
         cJSON *prod = cJSON_GetArrayItem(raiz, i);
         cJSON *nom = cJSON_GetObjectItem(prod, "nombre");
@@ -259,11 +259,11 @@ int existeProduccionJSON(const char *nombre) {
  * Guarda una nueva produccion en catalogo.json.
  */
 void guardarProduccionJSON(Produccion prod) {
-    FILE *archivo;
-    char contenedor[10000];
+    FILE *archivo;//Puntero al archivo JSON
+    char contenedor[10000];// Para almacenar el JSON
     cJSON *raiz = NULL;
 
-    archivo = fopen("data/catalogo.json", "r");
+    archivo = fopen("data/catalogo.json", "r");// Abrir el archivo JSON en modo lectura
     if (archivo != NULL) {
         size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) - 1, archivo);
         contenedor[largoArchivo] = '\0';
@@ -271,17 +271,17 @@ void guardarProduccionJSON(Produccion prod) {
         raiz = cJSON_Parse(contenedor);
     }
 
-    if (raiz == NULL) {
+    if (raiz == NULL) {// Si el archivo JSON no existe, crear un nuevo objeto JSON
         raiz = cJSON_CreateArray();
     }
 
-    cJSON *nuevaProd = cJSON_CreateObject();
-    cJSON_AddStringToObject(nuevaProd, "nombre", prod.nombre);
-    cJSON_AddStringToObject(nuevaProd, "autor", prod.autor);
-    cJSON_AddNumberToObject(nuevaProd, "anio_publicacion", prod.anio_publicacion);
-    cJSON_AddStringToObject(nuevaProd, "genero", prod.genero);
-    cJSON_AddStringToObject(nuevaProd, "resumen", prod.resumen);
-    cJSON_AddNumberToObject(nuevaProd, "cantidad", prod.cantidad);
+    cJSON *nuevaProd = cJSON_CreateObject();// Crear un nuevo objeto JSON para la produccion
+    cJSON_AddStringToObject(nuevaProd, "nombre", prod.nombre);// Agregar el nombre de la produccion al objeto JSON
+    cJSON_AddStringToObject(nuevaProd, "autor", prod.autor);// Agregar el autor de la produccion al objeto JSON
+    cJSON_AddNumberToObject(nuevaProd, "anio_publicacion", prod.anio_publicacion);// Agregar el año de publicacion de la produccion al objeto JSON
+    cJSON_AddStringToObject(nuevaProd, "genero", prod.genero);// Agregar el genero de la produccion al objeto JSON
+    cJSON_AddStringToObject(nuevaProd, "resumen", prod.resumen);// Agregar el resumen de la produccion al objeto JSON
+    cJSON_AddNumberToObject(nuevaProd, "cantidad", prod.cantidad);// Agregar la cantidad de libros de la produccion al objeto JSON
 
     cJSON_AddItemToArray(raiz, nuevaProd);
 
@@ -308,10 +308,10 @@ void guardarProduccionJSON(Produccion prod) {
 
 void generarEjemplaresJSON(const char *nombre, int cantidad) {
     FILE *archivo;
-    char contenedor[20000];
-    cJSON *raiz = NULL;
+    char contenedor[20000];// Para almacenar el JSON
+    cJSON *raiz = NULL; //Puntero a la raiz del JSON
 
-    archivo = fopen("data/ejemplares.json", "r");
+    archivo = fopen("data/ejemplares.json", "r");// Abrir el archivo JSON en modo lectura
     if (archivo != NULL) {
         size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) - 1, archivo);
         contenedor[largoArchivo] = '\0';
@@ -319,30 +319,30 @@ void generarEjemplaresJSON(const char *nombre, int cantidad) {
         raiz = cJSON_Parse(contenedor);
     }
 
-    if (raiz == NULL) {
+    if (raiz == NULL) {// Si el archivo JSON no existe, crear un nuevo objeto JSON
         raiz = cJSON_CreateArray();
     }
 
-    for (int i = 1; i <= cantidad; i++) {
+    for (int i = 1; i <= cantidad; i++) {// Crear un nuevo objeto JSON para cada ejemplar
         cJSON *ejemplar = cJSON_CreateObject();
 
-        char idEjemplar[256];
+        char idEjemplar[256];//char buffer para almacenar el ID del ejemplar
         snprintf(idEjemplar, sizeof(idEjemplar), "%s: %d", nombre, i);
 
-        cJSON_AddStringToObject(ejemplar, "id", idEjemplar);
-        cJSON_AddStringToObject(ejemplar, "produccion", nombre);
-        cJSON_AddStringToObject(ejemplar, "estado", "Disponible");
+        cJSON_AddStringToObject(ejemplar, "id", idEjemplar);// Agregar el ID del ejemplar al objeto JSON
+        cJSON_AddStringToObject(ejemplar, "produccion", nombre);// Agregar el nombre de la produccion al objeto JSON
+        cJSON_AddStringToObject(ejemplar, "estado", "Disponible");// Agregar el estado del ejemplar al objeto JSON
 
-        cJSON_AddItemToArray(raiz, ejemplar);
+        cJSON_AddItemToArray(raiz, ejemplar);// Agregar el nuevo ejemplar al array de ejemplares
     }
 
-    char *jsonString = cJSON_Print(raiz);
-    archivo = fopen("data/ejemplares.json", "w");
+    char *jsonString = cJSON_Print(raiz);// Convertir el objeto JSON a una cadena de caracteres
+    archivo = fopen("data/ejemplares.json", "w");// Abrir el archivo JSON en modo escritura
     if (archivo != NULL) {
-        fprintf(archivo, "%s", jsonString);
+        fprintf(archivo, "%s", jsonString);// Escribir la cadena de caracteres en el archivo JSON
         fclose(archivo);
     }
 
     free(jsonString);
-    cJSON_Delete(raiz);
+    cJSON_Delete(raiz);// Liberar la memoria del objeto JSON
 }
