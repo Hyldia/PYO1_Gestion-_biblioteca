@@ -10,6 +10,7 @@ void guardarUsuariosJSON(Usuario usuario);
 void mostrarUsuariosJSON();
 int existeIdentificacionJSON(const char *identificacion);
 int modificarUsuarioJSON(Usuario usuario);
-//int eliminarUsuarioJSON(const char *identificacion);
+int eliminarUsuarioJSON(const char *identificacion);
+int tieneRegistrosAsociados(const char *identificacion);  
 
 #endif

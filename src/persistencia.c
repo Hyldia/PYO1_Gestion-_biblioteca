@@ -128,6 +128,47 @@ int modificarUsuarioJSON(Usuario usuario){
     return 0;
 }
 
+/*
+* Elimina del archivo JSON el usuario del cual se ingresa la identificacion
+* Retorna:
+* 1 Si el usaurio fue eliminado
+* 0 si el usuario no fue encontrado
+*/
+int eliminarUsuarioJSON(const char *identificacion){
+    FILE *archivo = fopen("data/usuarios.json","r"); //Abrir el archivo JSON en modo lectura
+    if(archivo == NULL){
+        return 0;
+    }
+    char contenedor[10000]; //Para almacenar el JSON
+    size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) -1, archivo); //Leer el contenido del archivo JSON
+    contenedor[largoArchivo] = '\0'; //Agregar un caracter nulo al final del buffer
+    fclose(archivo); //Cerrar el archivo JSON
+    cJSON *raiz = cJSON_Parse(contenedor); //Convertir el contenido del contenedor a un objeto JSON
+    if(raiz == NULL) {
+        return 0;
+    }
+    int cantidadUsuarios = cJSON_GetArraySize(raiz); //Obtener la cantidad de usuarios en el array de usuarios
+    for(int indice = 0; indice < cantidadUsuarios; indice++){
+        cJSON *usuario = cJSON_GetArrayItem(raiz, indice); // Obtener el usuario en la posición indice del array de usuarios
+        cJSON *id = cJSON_GetObjectItem(usuario, "identificacion"); // Obtener la identifación del usuario
+        // Comprara la identifiacion ingresada con las almacenadas
+        if(strcmp(id->valuestring, identificacion) == 0){
+            cJSON_DeleteItemFromArray(raiz, indice); // Elimina la direccion que esta guardada
+
+            char *jsonString = cJSON_Print(raiz); //Convertir el objeto JSON a una cadena de caracteres
+
+            //Guardar en el archivo
+            archivo = fopen("data/usuarios.json", "w"); //Abrir el archivo JSON en modo escritura
+            fprintf(archivo, "%s", jsonString); //Escribir la cadena de caracteres en el archivo JSON
+            fclose(archivo); // Cerrar el archivo JSON
+            free(jsonString); // Liberar la memoria de la cadena de caracteres
+            cJSON_Delete(raiz); // Liberar la memoria del objeto JSON
+            return 1;
+        } 
+    }
+    cJSON_Delete(raiz);
+    return 0;
+}
 
 /*
  * Verifica si una identificacion ya se esta registrada dentro del archivo usuarios.json.
@@ -159,5 +200,18 @@ int existeIdentificacionJSON(const char *identificacion){
         }
     }
     cJSON_Delete(raiz);
+    return 0;
+}
+
+/*
+* Verifica si el usuario tiene registros asociados
+* Retorna:
+* 1 Si el usuario tine regitros asociados
+* 0 Si el usuario no tiene regstros asociados
+
+* La funcion actualamnete retorna 0 porue la parte de prestamos no esta implementada todavia.
+*/
+int tieneRegistrosAsociados(const char *identificacion){
+    (void)identificacion;
     return 0;
 }

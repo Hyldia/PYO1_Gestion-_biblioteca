@@ -154,3 +154,29 @@ void modificarUsuario(){
     }
 }
 
+/*
+* Solicita la identificacion del usuario a eliminar
+* Verifica si tiene registros asociados
+* Si no tiene elimina el usuario y si tiene muestra un mensaje informativo
+*/
+void eliminarUsuario(){
+    char identificacion[MAX_IDENTIFICACION]; // Guarda la identificacion
+    
+    printf("Ingrese la identificacion del usuario que desea eliminar: "),
+    fgets(identificacion, MAX_IDENTIFICACION, stdin);  //Pide la identificacion del usuario y lo guarda con fgets
+    identificacion[strcspn(identificacion, "\n")] = 0; //Elimina el salto de línea al final de la identificacion
+
+    //Comrobar si el usuario tiene registros
+    if(tieneRegistrosAsociados(identificacion)){
+        printf("-----------------------------\n");
+        printf("Error: El usaurio tiene registros asociados, no puede ser eliminado.\n");
+        return;
+    }
+    if(eliminarUsuarioJSON(identificacion)){
+        printf("-----------------------------\n");
+        printf("El usuario fue eliminado con exito.\n");
+    }else{
+        printf("-----------------------------\n");
+        printf("El usuario no fue encontrado.\n");
+    }
+}
