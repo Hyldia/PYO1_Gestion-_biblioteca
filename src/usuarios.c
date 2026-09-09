@@ -32,10 +32,10 @@ int verificarIdentificacion(const char *identificacion){
     }
 
     //La identifiación debe tener una longitud de 5 digitos
-    if(strlen(identificacion) != 5){
+    if(strlen(identificacion) != 9){
         return 0;
     } 
-    for(int indice = 0; indice < 5; indice++){
+    for(int indice = 0; indice < 9; indice++){
         if(!isdigit(identificacion[indice])){
             return 0;
         }
@@ -72,13 +72,13 @@ int validarCampoVacio(const char *texto){
 void agregarUsuario() {
     Usuario usuario;
 
-    printf("Identificacion (5 digitos): ");
+    printf("Identificacion (9 digitos): ");
     fgets(usuario.identificacion, MAX_IDENTIFICACION, stdin); //Pide la identificacion del usuario y lo guarda con fgets
     usuario.identificacion[strcspn(usuario.identificacion,"\n")] = 0; //Elimina el salto de línea al final de la identificacion
     // Comprobar identifiacion
     if(!verificarIdentificacion(usuario.identificacion)){
         printf("-----------------------------\n");
-        printf("Error: la identificacion debe tener 5 numeros.\n");
+        printf("Error: la identificacion debe tener 9 numeros.\n");
         return;
     }
     if(existeIdentificacionJSON(usuario.identificacion)){
@@ -107,8 +107,6 @@ void agregarUsuario() {
         return;
     }
     
-    usuario.activo = 1; //Marca al usuario como activo
-
     guardarUsuariosJSON(usuario); //Llama a la función para guardar el usuario en el archivo JSON
 }
 
@@ -128,11 +126,11 @@ void modificarUsuario(){
     printf("Ingrese la identificacion del usuario que desea modifica: ");
     fgets(usuario.identificacion, MAX_IDENTIFICACION, stdin); //Pide la identificacion del usuario y lo guarda con fgets
     usuario.identificacion[strcspn(usuario.identificacion, "\n")] = 0; //Elimina el salto de línea al final de la identificacion
-
-    // Verifica que la identificación tenga 5 numeros
+//
+    // Verifica que la identificación tenga 9 numeros
     if(!verificarIdentificacion(usuario.identificacion)){
         printf("-----------------------------\n");
-        printf("Error: La identificacion debe tener 5 numeros.\n");
+        printf("Error: La identificacion debe tener 9 numeros.\n");
         return;
     }
     printf("Ingresa la nueva direccion:");
@@ -165,7 +163,14 @@ void eliminarUsuario(){
     printf("Ingrese la identificacion del usuario que desea eliminar: "),
     fgets(identificacion, MAX_IDENTIFICACION, stdin);  //Pide la identificacion del usuario y lo guarda con fgets
     identificacion[strcspn(identificacion, "\n")] = 0; //Elimina el salto de línea al final de la identificacion
-
+//
+    // Verifica que la identificación tenga 9 numeros
+    if(!verificarIdentificacion(identificacion)){
+        printf("-----------------------------\n");
+        printf("Error: La identificacion debe tener 9 numeros.\n");
+        return;
+    }
+    
     //Comrobar si el usuario tiene registros
     if(tieneRegistrosAsociados(identificacion)){
         printf("-----------------------------\n");

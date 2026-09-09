@@ -7,7 +7,7 @@
 #define TIPOS_H
 
 // Definir constantes, tamaño de arreglos, etc.
-#define MAX_IDENTIFICACION 7
+#define MAX_IDENTIFICACION 11
 #define MAX_NOMBRE 100
 #define MAX_DIRECCION 100
 
@@ -16,7 +16,6 @@ typedef struct {
     char identificacion[MAX_IDENTIFICACION];
     char nombre[MAX_NOMBRE];
     char direccion[MAX_DIRECCION];
-    int activo;
 }Usuario;
 
 #endif
