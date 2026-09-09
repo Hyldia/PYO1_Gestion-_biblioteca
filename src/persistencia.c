@@ -12,6 +12,11 @@
 #include <cjson/cJSON.h>
 
 /*
+ * ---------------------------Usuarios---------------------------
+ */
+
+
+/*
  * Convierte la estructura Usuario en un objeto JSON y la guarda dentro del archivo usuarios.json.
  */
 void guardarUsuariosJSON(Usuario usuario){
@@ -214,4 +219,130 @@ int existeIdentificacionJSON(const char *identificacion){
 int tieneRegistrosAsociados(const char *identificacion){
     (void)identificacion;
     return 0;
+}
+
+/*
+ * ---------------------------Catalogo---------------------------
+ */
+
+/*
+ * Verifica si una produccion por su nombre ya existe en catalogo.json.
+ * Retorna: 1 si existe, 0 si no existe o falla la lectura.
+ */
+int existeProduccionJSON(const char *nombre) {
+    FILE *archivo = fopen("data/catalogo.json", "r");
+    if (archivo == NULL) return 0;
+
+    char contenedor[10000];// Para almacenar el JSON
+    size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) - 1, archivo);//leer el contenido del archivo JSON
+    contenedor[largoArchivo] = '\0';
+    fclose(archivo);
+
+    cJSON *raiz = cJSON_Parse(contenedor);
+    if (raiz == NULL) return 0;
+
+    int cantidad = cJSON_GetArraySize(raiz);
+    for (int i = 0; i < cantidad; i++) {
+        cJSON *prod = cJSON_GetArrayItem(raiz, i);
+        cJSON *nom = cJSON_GetObjectItem(prod, "nombre");
+        if (nom && nom->valuestring && strcmp(nom->valuestring, nombre) == 0) {//Compara el nombre de la produccion con el nombre buscado
+            cJSON_Delete(raiz);
+            return 1;
+        }
+    }
+
+    cJSON_Delete(raiz);// Liberar la memoria del objeto JSON
+    return 0;
+}
+
+/*
+ * Guarda una nueva produccion en catalogo.json.
+ */
+void guardarProduccionJSON(Produccion prod) {
+    FILE *archivo;
+    char contenedor[10000];
+    cJSON *raiz = NULL;
+
+    archivo = fopen("data/catalogo.json", "r");
+    if (archivo != NULL) {
+        size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) - 1, archivo);
+        contenedor[largoArchivo] = '\0';
+        fclose(archivo);
+        raiz = cJSON_Parse(contenedor);
+    }
+
+    if (raiz == NULL) {
+        raiz = cJSON_CreateArray();
+    }
+
+    cJSON *nuevaProd = cJSON_CreateObject();
+    cJSON_AddStringToObject(nuevaProd, "nombre", prod.nombre);
+    cJSON_AddStringToObject(nuevaProd, "autor", prod.autor);
+    cJSON_AddNumberToObject(nuevaProd, "anio_publicacion", prod.anio_publicacion);
+    cJSON_AddStringToObject(nuevaProd, "genero", prod.genero);
+    cJSON_AddStringToObject(nuevaProd, "resumen", prod.resumen);
+    cJSON_AddNumberToObject(nuevaProd, "cantidad", prod.cantidad);
+
+    cJSON_AddItemToArray(raiz, nuevaProd);
+
+    char *jsonString = cJSON_Print(raiz);
+    archivo = fopen("data/catalogo.json", "w");
+    if (archivo != NULL) {
+        fprintf(archivo, "%s", jsonString);
+        fclose(archivo);
+    }
+
+    free(jsonString);
+    cJSON_Delete(raiz);
+}
+
+
+/*
+ * ---------------------------Ejemplares---------------------------
+ */
+
+/*
+ * Genera N ejemplares segun se indique en el lote en ejemplares.json vinculados al nombre de la producción.
+ * Formato de ID de ejemplar: "NombreProduccion:1", "NombreProduccion:2"...
+ */
+
+void generarEjemplaresJSON(const char *nombre, int cantidad) {
+    FILE *archivo;
+    char contenedor[20000];
+    cJSON *raiz = NULL;
+
+    archivo = fopen("data/ejemplares.json", "r");
+    if (archivo != NULL) {
+        size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) - 1, archivo);
+        contenedor[largoArchivo] = '\0';
+        fclose(archivo);
+        raiz = cJSON_Parse(contenedor);
+    }
+
+    if (raiz == NULL) {
+        raiz = cJSON_CreateArray();
+    }
+
+    for (int i = 1; i <= cantidad; i++) {
+        cJSON *ejemplar = cJSON_CreateObject();
+
+        char idEjemplar[256];
+        snprintf(idEjemplar, sizeof(idEjemplar), "%s: %d", nombre, i);
+
+        cJSON_AddStringToObject(ejemplar, "id", idEjemplar);
+        cJSON_AddStringToObject(ejemplar, "produccion", nombre);
+        cJSON_AddStringToObject(ejemplar, "estado", "Disponible");
+
+        cJSON_AddItemToArray(raiz, ejemplar);
+    }
+
+    char *jsonString = cJSON_Print(raiz);
+    archivo = fopen("data/ejemplares.json", "w");
+    if (archivo != NULL) {
+        fprintf(archivo, "%s", jsonString);
+        fclose(archivo);
+    }
+
+    free(jsonString);
+    cJSON_Delete(raiz);
 }

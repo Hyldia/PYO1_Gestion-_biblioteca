@@ -13,4 +13,9 @@ int modificarUsuarioJSON(Usuario usuario);
 int eliminarUsuarioJSON(const char *identificacion);
 int tieneRegistrosAsociados(const char *identificacion);  
 
+//catalogo y ejemolares
+int existeProduccionJSON(const char *nombre);
+void guardarProduccionJSON(Produccion prod);
+void generarEjemplaresJSON(const char *nombre, int cantidad);
+
 #endif
