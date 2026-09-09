@@ -3,9 +3,4 @@
 		"nombre":	"maria",
 		"direccion":	"Guapiles",
 		"activo":	1
-	}, {
-		"Identificacion":	"34567",
-		"nombre":	"juan",
-		"direccion":	"Heredia",
-		"activo":	1
 	}]

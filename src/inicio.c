@@ -17,6 +17,7 @@ int main() {
         printf("1. Agregar usuario\n");
         printf("2. Listar usuarios\n");
         printf("3. Modificar usuario\n");
+        printf("4. Eliminar usuario\n");
         printf("0. Salir\n");
 
         printf("Opcion: ");
@@ -34,6 +35,8 @@ int main() {
             case 3:
                 modificarUsuario();
                 break;
+            case 4:
+                eliminarUsuario();
         }
 
     } while(opcion != 0);
