@@ -3,7 +3,7 @@
 
 #include "tipos.h"
 
-void menuCatalogo(void);
+// void menuCatalogo(void);
 void agregarLote(void);
 void mostrarCatalogo(void);
 

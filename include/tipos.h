@@ -33,4 +33,14 @@ typedef struct {
     char *resumen;          
     int cantidad;
 }Produccion;
+
+typedef struct {
+    int id;
+    char *usuario;
+    char *fecha_inicio; // "YYYY-MM-DD"
+    char *fecha_entrega; // "YYYY-MM-DD"
+    char *estado; // "activo" / "vencido" / "finalizado"
+    char **ejemplares; 
+    int cantidad_ejemplares;
+} Prestamo;
 #endif
