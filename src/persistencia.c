@@ -12,20 +12,61 @@
 #include <cjson/cJSON.h>
 
 /*
+* Lee todo el contenido de un archivo y lo almacena en memoria dinamica
+* Funcionamiento:
+* - Obtiene el tamaño total del archivo.
+* - Reserva memoria con malloc().
+* - Lee el contenido completo del archivo.
+* - Agrega el caracter nulo '\0' al final para
+* tratar el contenido como una cadena.
+
+* Parametros:
+* - archivo: puntero al archivo previamente abierto.
+* Retorna:
+* - Un puntero a memoria dinamica con el contenido completo del archivo.
+* - NULL si ocurre un error al reservar memoria.
+*
+* Importante:
+* - La memoria devuelta se liberada con free() cuando ya no se necesite.
+*/
+char *leerArchivoCompleto(FILE *archivo){
+    fseek(archivo, 0, SEEK_END); // Mover el cursor al final para conseguir el tamaño
+    long tamano = ftell(archivo); // Obtener el tamaño total del archivo en bytes
+    rewind(archivo); // Regresar el cursor al inicio del archivo
+
+    char *contenedor = malloc(tamano + 1); //Reservar memoria dinamica para almacenar el contenido
+
+    if(contenedor == NULL){ // Verificar que la memoria se reservocon exito
+        return NULL;
+    }
+    fread(contenedor, 1, tamano, archivo); // Leer el contenido completo del archivo
+    contenedor[tamano] = '\0'; //Agregar terminador nulo para formar una cadena válida
+
+    return contenedor;
+}
+
+/*
  * Convierte la estructura Usuario en un objeto JSON y la guarda dentro del archivo usuarios.json.
  */
 void guardarUsuariosJSON(Usuario usuario){
     FILE *archivo; //Puntero al archivo JSON
-    char contenedor[10000]; // Para almacenar el JSON
+    char *contenedor = NULL; // Para almacenar el JSON
     cJSON *raiz = NULL; //Puntero a la raiz del JSON
+    long tamanoArchivo = ftell(archivo);
 
     archivo = fopen("data/usuarios.json", "r"); //Abrir el archivo JSON en modo lectura
     if (archivo != NULL) {
-        size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) -1, archivo); //Leer el contenido del archivo JSON
-        contenedor[largoArchivo] = '\0'; //Agregar un caracter nulo al final del buffer
+        contenedor =leerArchivoCompleto(archivo);
+        if(contenedor == NULL){
+            fclose(archivo);
+            return;
+        }
         fclose(archivo); //Cerrar el archivo JSON
         
         raiz = cJSON_Parse(contenedor); //Convertir el contenido del contenedor a un objeto JSON
+        // Liberar la memoria que se uso para leer el archivo
+        free(contenedor);
+        contenedor = NULL;
     }
     //Si el archivo contiene datos pero no puede convertirse a JSON, se considera corrupto.
     if(strlen(contenedor) > 0 && raiz == NULL){
@@ -33,7 +74,7 @@ void guardarUsuariosJSON(Usuario usuario){
         return;
     }
     //Si el archivo existe pero está vacío se crea un arreglo nuevo.
-    if(strlen(contenedor) == 0){
+    if(tamanoArchivo == 0){
         raiz = cJSON_CreateArray();
     }
     // Validar que la estructura del archivo JSON sea un arreglo
@@ -72,13 +113,14 @@ void mostrarUsuariosJSON(){
         printf("No hay usuarios registados.\n");
         return;
     }
-    char contenedor[10000]; //Para almacenar el JSON
-    size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) -1, archivo); //Leer el contenido del archivo JSON
-    contenedor[largoArchivo] = '\0'; //Agregar un caracter nulo al final del buffer
+    char *contenedor = leerArchivoCompleto(archivo); //Para almacenar el JSON
     fclose(archivo); //Cerrar el archivo JSON
 
     cJSON *raiz = cJSON_Parse(contenedor); //Convertir el contenido del contenedor a un objeto JSON
-    
+    // Liberar la memoria que se uso para leer el archivo
+    free(contenedor);
+    contenedor = NULL;
+
     // Valida que el archivo JSON no este daana o manipulado
     if(raiz == NULL){
         printf("Error: El archivo usuario.json esta corrupto o fue manipulado.\n");
@@ -128,13 +170,14 @@ int modificarUsuarioJSON(Usuario usuario){
     if(archivo == NULL){
         return 0;
     }
-    char contenedor[10000]; //Para almacenar el JSON
-    size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) -1, archivo); //Leer el contenido del archivo JSON
-    contenedor[largoArchivo] = '\0'; //Agregar un caracter nulo al final del buffer
+    char *contenedor = leerArchivoCompleto(archivo);    
     fclose(archivo); //Cerrar el archivo JSON
     
     cJSON *raiz = cJSON_Parse(contenedor); //Convertir el contenido del contenedor a un objeto JSON
-    
+    // Liberar la memoria que se uso para leer el archivo
+    free(contenedor);
+    contenedor = NULL;
+
     // Valida que el archivo JSON no este daana o manipulado
     if(raiz == NULL){
         printf("Error: El archivo usuario.json esta corrupto o fue manipulado.\n");
@@ -187,13 +230,16 @@ int eliminarUsuarioJSON(const char *identificacion){
     if(archivo == NULL){
         return 0;
     }
-    char contenedor[10000]; //Para almacenar el JSON
+    char *contenedor = leerArchivoCompleto(archivo); //Para almacenar el JSON
     size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) -1, archivo); //Leer el contenido del archivo JSON
     contenedor[largoArchivo] = '\0'; //Agregar un caracter nulo al final del buffer
     fclose(archivo); //Cerrar el archivo JSON
     
     cJSON *raiz = cJSON_Parse(contenedor); //Convertir el contenido del contenedor a un objeto JSON
-    
+    // Liberar la memoria que se uso para leer el archivo
+    free(contenedor);
+    contenedor = NULL;
+
     // Valida que el archivo JSON no este daana o manipulado
     if(raiz == NULL){
         printf("Error: El archivo usuario.json esta corrupto o fue manipulado.\n");
@@ -246,14 +292,19 @@ int existeIdentificacionJSON(const char *identificacion){
     if(archivo == NULL) {
         return 0;
     }
-    char contenedor[10000]; //Para almacenar el JSON
-    size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) -1, archivo); //Leer el contenido del archivo JSON
-    contenedor[largoArchivo] = '\0'; //Agregar un caracter nulo al final del buffer
+    fseek(archivo, 0, SEEK_END);
+    long largoArchivo = ftell(archivo);
+    rewind(archivo);
+
+    char *contenedor = leerArchivoCompleto(archivo); //Para almacenar el JSON
     fclose(archivo); //Cerrar el archivo JSON
     
     cJSON *raiz = cJSON_Parse(contenedor); //Convertir el contenido del contenedor a un objeto JSON
-    
-    // Valida que el archivo JSON no este daana o manipulado
+    // Liberar la memoria que se uso para leer el archivo
+    free(contenedor);
+    contenedor = NULL;
+
+    // Valida que el archivo JSON no este dañado o manipulado
     if(largoArchivo == 0){
         return 0;
     }

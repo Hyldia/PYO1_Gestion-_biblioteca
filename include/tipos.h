@@ -13,9 +13,9 @@
 
 // Definir estructuras de datos
 typedef struct {
-    char identificacion[MAX_IDENTIFICACION];
-    char nombre[MAX_NOMBRE];
-    char direccion[MAX_DIRECCION];
-}Usuario;
+    char *identificacion;
+    char *nombre;
+    char *direccion;
+} Usuario;
 
 #endif

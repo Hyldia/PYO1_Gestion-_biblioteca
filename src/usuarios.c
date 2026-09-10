@@ -71,6 +71,19 @@ int validarCampoVacio(const char *texto){
 */
 void agregarUsuario() {
     Usuario usuario;
+    
+    usuario.identificacion = malloc(MAX_IDENTIFICACION);
+    usuario.nombre = malloc(MAX_NOMBRE);
+    usuario.direccion = malloc(MAX_DIRECCION);
+    
+    if(usuario.identificacion == NULL || usuario.nombre == NULL || usuario.direccion == NULL){
+        free(usuario.identificacion);
+        free(usuario.nombre);
+        free(usuario.direccion);
+
+        printf("Error de memoria.\n");
+        return;
+    }
 
     printf("Identificacion (9 digitos): ");
     fgets(usuario.identificacion, MAX_IDENTIFICACION, stdin); //Pide la identificacion del usuario y lo guarda con fgets
@@ -108,6 +121,10 @@ void agregarUsuario() {
     }
     
     guardarUsuariosJSON(usuario); //Llama a la función para guardar el usuario en el archivo JSON
+    // Liberar la memoria que se uso 
+    free(usuario.identificacion);
+    free(usuario.nombre);
+    free(usuario.direccion);
 }
 
 /*
@@ -122,6 +139,18 @@ void mostrarUsuarios() {
  */
 void modificarUsuario(){
     Usuario usuario; // Crear variable de tipo usuario para guardar los datos ingresados
+    usuario.identificacion = malloc(MAX_IDENTIFICACION);
+    usuario.nombre = malloc(MAX_NOMBRE);
+    usuario.direccion = malloc(MAX_DIRECCION);
+    
+    if(usuario.identificacion == NULL || usuario.nombre == NULL || usuario.direccion == NULL){
+        free(usuario.identificacion);
+        free(usuario.nombre);
+        free(usuario.direccion);
+
+        printf("Error de memoria.\n");
+        return;
+    }
     
     printf("Ingrese la identificacion del usuario que desea modifica: ");
     fgets(usuario.identificacion, MAX_IDENTIFICACION, stdin); //Pide la identificacion del usuario y lo guarda con fgets
@@ -150,6 +179,10 @@ void modificarUsuario(){
         printf("-----------------------------\n");
         printf("Usuario no encontrado.\n");
     }
+    // Liberar la memoria que se uso 
+    free(usuario.identificacion);
+    free(usuario.nombre);
+    free(usuario.direccion);
 }
 
 /*
