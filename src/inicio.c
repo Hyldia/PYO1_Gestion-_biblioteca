@@ -130,7 +130,23 @@ static void menuOperativas(void) {
                 menuUsuarios();
                 break;
             case 3:
-                printf("\n(Pendiente)\n");
+                int sub;
+                printf("\n1. Ver todos\n");
+                printf("2. Ver por rango de fechas\n");
+                printf("0. Volver\n");
+                printf("Opcion: ");
+                sub = leerOpcion();
+
+                if (sub == 1) {
+                    mostrarTodosLosPrestamos();
+                } else if (sub == 2) {
+                    mostrarHistorialPrestamos();
+                } else if (sub == 0) {
+                    printf("Volviendo al menu de opciones operativas...\n");
+                    break;
+                } else {
+                    printf("Opcion invalida.\n");
+                }
                 break;
             case 4:
                 printf("\n(Pendiente)\n");

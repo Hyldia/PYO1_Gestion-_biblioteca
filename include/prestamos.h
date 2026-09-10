@@ -4,5 +4,7 @@
 
 // para registrar un prestamo
 void registrarPrestamo(void);
+void mostrarHistorialPrestamos(void);
+void mostrarTodosLosPrestamos(void);
 
 #endif
