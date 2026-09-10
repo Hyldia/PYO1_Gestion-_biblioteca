@@ -211,14 +211,14 @@ static void marcarEjemplaresPrestados(char **ejemplares, int cantidad) {
 * Entradas:  p - puntero al prestamo (paso por referencia, solo lectura).
 * Salidas:   ninguna.
 */
-static void imprimirComprobante(const Prestamo *p) { /* falta implementar los datos en tipos*/
+static void imprimirComprobante(const Prestamo *p) { 
     printf("\n==================================================\n");
     printf("            COMPROBANTE DE PRESTAMO\n");
     printf("==================================================\n");
     printf("Prestamo #%d\n", p->id);
-    printf("Usuario:        %s\n", p->usuario);
-    printf("Fecha inicio:   %s\n", p->fecha_inicio);
-    printf("Fecha entrega:  %s\n", p->fecha_entrega);
+    printf("Usuario: %s\n", p->usuario);
+    printf("Fecha inicio:%s\n", p->fecha_inicio);
+    printf("Fecha entrega: %s\n", p->fecha_entrega);
     printf("Ejemplares prestados:\n");
     for (int i = 0; i < p->cantidad_ejemplares; i++) {
         printf("   - %s\n", p->ejemplares[i]);

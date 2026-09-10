@@ -18,4 +18,10 @@ int existeProduccionJSON(const char *nombre);
 void guardarProduccionJSON(Produccion prod);
 void generarEjemplaresJSON(const char *nombre, int cantidad);
 
+int  existeEjemplarJSON(const char *idEjemplar);
+int  ejemplarDisponibleJSON(const char *idEjemplar, const char *fInicio, const char *fFin);
+int  siguienteIdPrestamoJSON(void);
+void guardarPrestamoJSON(Prestamo prestamo);
+void cambiarEstadoEjemplarJSON(const char *idEjemplar, const char *nuevoEstado);
+
 #endif
