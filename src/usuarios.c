@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h> //para valida identificacion
+#include <stdlib.h>
 #include "usuarios.h"
 #include "persistencia.h"
 #include "tipos.h"

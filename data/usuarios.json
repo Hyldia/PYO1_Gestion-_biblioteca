@@ -6,4 +6,8 @@
 		"identificacion":	"987656789",
 		"nombre":	"maria",
 		"direccion":	"liverpol"
+	}, {
+		"identificacion":	"987654321",
+		"nombre":	"sofia",
+		"direccion":	"Limoncito"
 	}]

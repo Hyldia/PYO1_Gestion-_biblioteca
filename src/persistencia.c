@@ -52,10 +52,15 @@ void guardarUsuariosJSON(Usuario usuario){
     FILE *archivo; //Puntero al archivo JSON
     char *contenedor = NULL; // Para almacenar el JSON
     cJSON *raiz = NULL; //Puntero a la raiz del JSON
-    long tamanoArchivo = ftell(archivo);
+    long tamanoArchivo = 0;
 
     archivo = fopen("data/usuarios.json", "r"); //Abrir el archivo JSON en modo lectura
     if (archivo != NULL) {
+        //Actualizar tamaño archivo
+        fseek(archivo, 0, SEEK_END);
+        tamanoArchivo = ftell(archivo);
+        rewind(archivo);
+
         contenedor =leerArchivoCompleto(archivo);
         if(contenedor == NULL){
             fclose(archivo);
@@ -69,7 +74,7 @@ void guardarUsuariosJSON(Usuario usuario){
         contenedor = NULL;
     }
     //Si el archivo contiene datos pero no puede convertirse a JSON, se considera corrupto.
-    if(strlen(contenedor) > 0 && raiz == NULL){
+    if(tamanoArchivo > 0 && raiz == NULL){
         printf("Error: El archivo usuarios.json esta corrupto o fue manipulado.\n");
         return;
     }
@@ -231,8 +236,6 @@ int eliminarUsuarioJSON(const char *identificacion){
         return 0;
     }
     char *contenedor = leerArchivoCompleto(archivo); //Para almacenar el JSON
-    size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) -1, archivo); //Leer el contenido del archivo JSON
-    contenedor[largoArchivo] = '\0'; //Agregar un caracter nulo al final del buffer
     fclose(archivo); //Cerrar el archivo JSON
     
     cJSON *raiz = cJSON_Parse(contenedor); //Convertir el contenido del contenedor a un objeto JSON
