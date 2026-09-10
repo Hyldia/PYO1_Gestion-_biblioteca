@@ -10,6 +10,13 @@
 #define MAX_IDENTIFICACION 11
 #define MAX_NOMBRE 100
 #define MAX_DIRECCION 100
+#define MAX_AUTOR 100
+#define MAX_GENERO 50
+#define MAX_RESUMEN 500
+#define MAX_RUTA 256
+#define MAX_LINEA 1024
+#define MAX_CONTENEDOR_USUARIOS 10000
+#define MAX_CONTENEDOR_CATALOGO 20000
 
 // Definir estructuras de datos
 typedef struct {
@@ -18,4 +25,12 @@ typedef struct {
     char *direccion;
 } Usuario;
 
+typedef struct {
+    char *nombre;
+    char *autor;
+    int anio_publicacion;
+    char *genero;
+    char *resumen;          
+    int cantidad;
+}Produccion;
 #endif
