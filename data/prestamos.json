@@ -1,0 +1,15 @@
+[{
+		"id":	1,
+		"usuario":	"123456789",
+		"fecha_inicio":	"2026-09-10",
+		"fecha_entrega":	"2026-09-20",
+		"estado":	"activo",
+		"ejemplares":	["1984: 1"]
+	}, {
+		"id":	2,
+		"usuario":	"123456789",
+		"fecha_inicio":	"2026-12-01",
+		"fecha_entrega":	"2026-12-12",
+		"estado":	"activo",
+		"ejemplares":	["Orgullo y prejuicio- 2"]
+	}]

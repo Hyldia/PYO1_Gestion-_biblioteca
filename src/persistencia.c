@@ -479,7 +479,7 @@ void generarEjemplaresJSON(const char *nombre, int cantidad) {
             cJSON_Delete(ejemplar);
             continue;
         }
-        snprintf(idEjemplar, 256, "%s: %d", nombre, i);
+        snprintf(idEjemplar, 256, "%s- %d", nombre, i);
 
         cJSON_AddStringToObject(ejemplar, "id", idEjemplar);// Agregar el ID del ejemplar al objeto JSON
         cJSON_AddStringToObject(ejemplar, "produccion", nombre);// Agregar el nombre de la produccion al objeto JSON

@@ -282,37 +282,4 @@ void mostrarCatalogo(void) {
     free(contenedor);
 }
 
-/*
-*submenu:catalogo
-*/
-void menuCatalogo(void) {
-    int opcion;
-    while (1) {
-        printf("\n--- Menú Catálogo ---\n");
-        printf("1. Agregar catálogo por lote\n");
-        printf("2. Mostrar catálogo\n");
-        printf("0. Volver\n");
-        printf("Seleccione una opción: ");
-        
-        if (scanf("%d", &opcion) != 1) {
-            while (getchar() != '\n'); // Limpiar buffer
-            printf("Opción inválida.\n");
-            continue;
-        }
-        while (getchar() != '\n'); // Limpiar buffer
-        
-        switch (opcion) {
-            case 1:
-                agregarLote();
-                break;
-            case 2:
-                mostrarCatalogo();
-                break;
-            case 0:
-                return;
-            default:
-                printf("Opción inválida.\n");
-        }
-    }
-}
 
