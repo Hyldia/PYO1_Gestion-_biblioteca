@@ -102,17 +102,21 @@ static int fechaValida(const char *fecha) {
 * Restricciones: el que llama debe liberar la memoria.
 */
 static char *pedirUsuario(void) {
-    printf("Identificacion del usuario: ");
-    char *usuario = leerLinea();
-    if (usuario == NULL) return NULL;
-
-    if (!existeIdentificacionJSON(usuario)) {
-        printf("-----------------------------\n");
-        printf("Error: el usuario no existe.\n");
+    while (1) {
+        printf("Identificacion del usuario (vacio para cancelar): ");
+        char *usuario = leerLinea();
+        if (usuario == NULL){
+            return NULL;
+        }
+        if (usuario[0] == '\0') {
+            free(usuario); return NULL;// cancelar
+        }
+        if (existeIdentificacionJSON(usuario)) {
+            return usuario;// ok
+        }
+        printf("El usuario no existe. Intente de nuevo.\n");
         free(usuario);
-        return NULL;
     }
-    return usuario;
 }
 
 /*
@@ -121,25 +125,57 @@ static char *pedirUsuario(void) {
 * Salidas: puntero malloc con la fecha valida, o NULL si el formato falla.
 */
 static char *pedirFecha(const char *rotulo) {
-    printf("%s", rotulo);
-    char *fecha = leerLinea();
-    if (fecha == NULL) return NULL;
-
-    if (!fechaValida(fecha)) {
-        printf("-----------------------------\n");
-        printf("Error: la fecha debe tener el formato YYYY-MM-DD.\n");
+    while (1) {
+        printf("%s", rotulo);
+        char *fecha = leerLinea();
+        if (fecha == NULL){
+            return NULL;
+        }
+        if (fecha[0] == '\0') {
+            free(fecha);
+            return NULL; 
+        }       // cancelar
+        if (fechaValida(fecha)) {
+            return fecha;
+        }
+        printf("Formato invalido, use YYYY-MM-DD. Intente de nuevo.\n");
         free(fecha);
-        return NULL;
     }
-    return fecha;
+}
+
+/*
+* Objetivo:  pedir fecha de inicio y de entrega, repitiendo hasta que sean validas y inicio <= entrega. Vacio en cualquiera cancela
+* Entradas: inicio, entrega - direcciones donde se dejan las fechas
+* Salidas: 1 si quedaron dos fechas validas; 0 si el usuario cancelo
+*/
+static int pedirRangoFechas(char **inicio, char **entrega) {
+    while (1) {
+        char *fi = pedirFecha("Fecha de inicio (YYYY-MM-DD, vacio para cancelar): ");
+        if (fi == NULL){
+            return 0;
+        }
+        char *fe = pedirFecha("Fecha de entrega (YYYY-MM-DD, vacio para cancelar): ");
+        if (fe == NULL) {
+            free(fi);
+            return 0; 
+        }
+        if (strcmp(fi, fe) <= 0) {
+            *inicio  = fi;
+            *entrega = fe;
+            return 1;
+        }
+        printf("   La fecha de inicio no puede ser posterior a la de entrega. Intente de nuevo.\n");
+        free(fi);
+        free(fe);
+    }
 }
 
 /*
 * Objetivo: agregar un id de ejemplar a un arreglo dinamico de cadenas.
 * Entradas: 
-*            lista    - direccion del arreglo
+*            lista- direccion del arreglo
 *            cantidad - direccion del contador
-*            id       - cadena a agregar, el arreglo se queda con el puntero.
+*            id- cadena a agregar, el arreglo se queda con el puntero.
 * Salidas: 1 si se agrego, 0 si fallo la reserva de memoria.
 */
 static int agregarEjemplar(char ***lista, int *cantidad, char *id) {
@@ -254,27 +290,15 @@ static void liberarPrestamo(Prestamo *p) {
 void registrarPrestamo(void) {
 
     char *usuario = pedirUsuario();
-    if (usuario == NULL) return;
-
-    char *fechaInicio = pedirFecha("Fecha de inicio (YYYY-MM-DD): ");
-    if (fechaInicio == NULL) {
-        free(usuario);
+    if (usuario == NULL) {
+        printf("Operacion cancelada.\n");
         return;
     }
-
-    char *fechaEntrega = pedirFecha("Fecha de entrega (YYYY-MM-DD): ");
-    if (fechaEntrega == NULL) {
+    char *fechaInicio  = NULL;
+    char *fechaEntrega = NULL;
+    if (!pedirRangoFechas(&fechaInicio, &fechaEntrega)) {
+        printf("Operacion cancelada.\n");
         free(usuario);
-        free(fechaInicio);
-        return;
-    }
-
-    if (strcmp(fechaInicio, fechaEntrega) > 0) {
-        printf("-----------------------------\n");
-        printf("Error: la fecha de inicio no puede ser posterior a la de entrega.\n");
-        free(usuario);
-        free(fechaInicio);
-        free(fechaEntrega);
         return;
     }
 
