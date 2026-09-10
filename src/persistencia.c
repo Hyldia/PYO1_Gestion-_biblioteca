@@ -499,3 +499,218 @@ void generarEjemplaresJSON(const char *nombre, int cantidad) {
     cJSON_Delete(raiz);
     free(contenedor);
 }
+
+/*nota: raiz es el objeto JSON principal */
+
+/* Persistencia de Prestamos */
+/*
+* Objetivo:abrir un archivo JSON, leerlo completo y convertirlo a objeto cJSON.
+* Entradas: ruta - ruta del archivo.
+* Salidas:puntero cJSON con el contenido, o NULL si el archivo no existe o esta vacio/corrupto.
+*/
+static cJSON *cargarArchivoJSON(const char *ruta) {
+    FILE *archivo = fopen(ruta, "r");
+    if (archivo == NULL) {
+        return NULL;
+    }
+
+    char *contenido = leerArchivoCompleto(archivo);
+    fclose(archivo);
+    if (contenido == NULL) {
+        return NULL;
+    }
+
+    cJSON *raiz = cJSON_Parse(contenido);
+    free(contenido);
+    return raiz;
+}
+
+/*
+* Objetivo:escribir un objeto cJSON en un archivo (lo reemplaza completo).
+* Entradas:ruta - archivo destino; raiz - objeto cJSON a guardar.
+* Salidas:ninguna
+*/
+static void escribirArchivoJSON(const char *ruta, cJSON *raiz) {
+    char *texto = cJSON_Print(raiz);
+    if (texto == NULL) return;
+
+    FILE *archivo = fopen(ruta, "w");
+    if (archivo != NULL) {
+        fprintf(archivo, "%s", texto);
+        fclose(archivo);
+    }
+    free(texto);
+}
+
+/*
+* Objetivo:indicar si dos rangos de fechas se cruzan (formato YYYY-MM-DD).
+* Entradas:aIni, aFin - primer rango; bIni, bFin - segundo rango.
+* Salidas:1 si se cruzan, 0 si no.
+* Restricciones: compara las fechas como texto (solo sirve con formato ISO).
+*/
+static int fechasSeCruzan(const char *aIni, const char *aFin, const char *bIni, const char *bFin) {
+    return (strcmp(aIni, bFin) <= 0 && strcmp(bIni, aFin) <= 0);
+}
+
+/*
+* Objetivo:indicar si un arreglo cJSON de cadenas contiene un valor dado.
+* Entradas:arr - arreglo cJSON; valor - cadena a buscar.
+* Salidas:1 si lo contiene, 0 si no.
+*/
+static int arregloContieneCadena(cJSON *arr, const char *valor) {
+    if (!cJSON_IsArray(arr)) return 0;
+    int cantidad = cJSON_GetArraySize(arr);
+    for (int i = 0; i < cantidad; i++) {
+        cJSON *item = cJSON_GetArrayItem(arr, i);
+        if (cJSON_IsString(item) && strcmp(item->valuestring, valor) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+/*
+* Objetivo:  calcular el id que le corresponde al proximo prestamo.
+* Entradas:  ninguna (lee data/prestamos.json).
+* Salidas:   el id mas alto encontrado + 1; 1 si no hay prestamos.
+*/
+int siguienteIdPrestamoJSON(void) {
+    cJSON *raiz = cargarArchivoJSON("data/prestamos.json");
+    if (!cJSON_IsArray(raiz)) {
+        cJSON_Delete(raiz);
+        return 1;
+    }
+
+    int maximo = 0;
+    int cantidad = cJSON_GetArraySize(raiz);
+    for (int i = 0; i < cantidad; i++) {
+        cJSON *p  = cJSON_GetArrayItem(raiz, i);
+        cJSON *id = cJSON_GetObjectItem(p, "id");
+        if (cJSON_IsNumber(id) && id->valueint > maximo) {
+            maximo = id->valueint;
+        }
+    }
+
+    cJSON_Delete(raiz);
+    return maximo + 1;
+}
+
+/*
+* Objetivo:  agregar un prestamo al archivo data/prestamos.json.
+* Entradas:  prestamo - estructura con todos los datos (paso por valor).
+* Salidas:   ninguna (modifica el archivo).
+*/
+void guardarPrestamoJSON(Prestamo prestamo) {
+    cJSON *raiz = cargarArchivoJSON("data/prestamos.json");
+    if (!cJSON_IsArray(raiz)) {
+        cJSON_Delete(raiz);
+        raiz = cJSON_CreateArray();
+    }
+
+    cJSON *obj = cJSON_CreateObject();
+    cJSON_AddNumberToObject(obj, "id", prestamo.id);
+    cJSON_AddStringToObject(obj, "usuario", prestamo.usuario);
+    cJSON_AddStringToObject(obj, "fecha_inicio", prestamo.fecha_inicio);
+    cJSON_AddStringToObject(obj, "fecha_entrega", prestamo.fecha_entrega);
+    cJSON_AddStringToObject(obj, "estado", prestamo.estado);
+
+    cJSON *arr = cJSON_CreateArray();
+    for (int i = 0; i < prestamo.cantidad_ejemplares; i++) {
+        cJSON_AddItemToArray(arr, cJSON_CreateString(prestamo.ejemplares[i]));
+    }
+    cJSON_AddItemToObject(obj, "ejemplares", arr);
+
+    cJSON_AddItemToArray(raiz, obj);
+
+    escribirArchivoJSON("data/prestamos.json", raiz);
+    cJSON_Delete(raiz);
+}
+
+/*
+* Objetivo:indicar si un ejemplar existe en data/ejemplares.json.
+* Entradas:idEjemplar - identificador a buscar.
+* Salidas:1 si existe, 0 si no.
+*/
+int existeEjemplarJSON(const char *idEjemplar) {
+    cJSON *raiz = cargarArchivoJSON("data/ejemplares.json");
+    if (!cJSON_IsArray(raiz)) {
+        cJSON_Delete(raiz);
+        return 0;
+    }
+
+    int encontrado = 0;
+    int cantidad = cJSON_GetArraySize(raiz);
+    for (int i = 0; i < cantidad && !encontrado; i++) {
+        cJSON *ej = cJSON_GetArrayItem(raiz, i);
+        cJSON *id = cJSON_GetObjectItem(ej, "id");
+        if (cJSON_IsString(id) && strcmp(id->valuestring, idEjemplar) == 0) {
+            encontrado = 1;
+        }
+    }
+
+    cJSON_Delete(raiz);
+    return encontrado;
+}
+
+/*
+* Objetivo:indicar si un ejemplar esta disponible en un rango de fechas.
+* Entradas:idEjemplar - ejemplar a revisar; fInicio, fFin - rango pedido.
+* Salidas:1 si esta disponible, 0 si ya esta prestado en fechas que se cruzan.
+* Restricciones: solo considera prestamos con estado "activo".
+*/
+int ejemplarDisponibleJSON(const char *idEjemplar,
+                           const char *fInicio, const char *fFin) {
+    cJSON *raiz = cargarArchivoJSON("data/prestamos.json");
+    if (!cJSON_IsArray(raiz)) {
+        cJSON_Delete(raiz);
+        return 1; // no hay prestamos
+    }
+
+    int disponible = 1;
+    int cantidad = cJSON_GetArraySize(raiz);
+    for (int i = 0; i < cantidad && disponible; i++) {
+        cJSON *p = cJSON_GetArrayItem(raiz, i);
+
+        cJSON *estado = cJSON_GetObjectItem(p, "estado");
+        if (!cJSON_IsString(estado) || strcmp(estado->valuestring, "activo") != 0) {
+            continue; // solo interesan los activos
+        }
+
+        cJSON *arr  = cJSON_GetObjectItem(p, "ejemplares");
+        cJSON *pIni = cJSON_GetObjectItem(p, "fecha_inicio");
+        cJSON *pFin = cJSON_GetObjectItem(p, "fecha_entrega");
+        if (!cJSON_IsString(pIni) || !cJSON_IsString(pFin)) continue;
+
+        if (arregloContieneCadena(arr, idEjemplar) &&
+            fechasSeCruzan(fInicio, fFin, pIni->valuestring, pFin->valuestring)) {
+            disponible = 0;
+        }
+    }
+
+    cJSON_Delete(raiz);
+    return disponible;
+}
+/*
+* Objetivo:  cambiar el estado de un ejemplar en data/ejemplares.json.
+* Entradas:  idEjemplar - ejemplar a modificar; nuevoEstado - "Prestado"/"Disponible".
+* Salidas:   ninguna (modifica el archivo si encuentra el ejemplar).
+*/
+void cambiarEstadoEjemplarJSON(const char *idEjemplar, const char *nuevoEstado) {
+    cJSON *raiz = cargarArchivoJSON("data/ejemplares.json");
+    if (!cJSON_IsArray(raiz)) {
+        cJSON_Delete(raiz);
+        return;
+    }
+
+    int cantidad = cJSON_GetArraySize(raiz);
+    for (int i = 0; i < cantidad; i++) {
+        cJSON *ej = cJSON_GetArrayItem(raiz, i);
+        cJSON *id = cJSON_GetObjectItem(ej, "id");
+        if (cJSON_IsString(id) && strcmp(id->valuestring, idEjemplar) == 0) {
+            cJSON_ReplaceItemInObject(ej, "estado", cJSON_CreateString(nuevoEstado));
+            break;
+        }
+    }
+
+    escribirArchivoJSON("data/ejemplares.json", raiz);
+    cJSON_Delete(raiz);
+}
