@@ -1,6 +1,9 @@
 [{
-		"Identificacion":	"12345",
+		"identificacion":	"123456789",
+		"nombre":	"carlos",
+		"direccion":	"limon"
+	}, {
+		"identificacion":	"987656789",
 		"nombre":	"maria",
-		"direccion":	"Guapiles",
-		"activo":	1
+		"direccion":	"liverpol"
 	}]
