@@ -15,21 +15,24 @@
  * 0 Si es nulo, vacio o solo tiene espacios en blanco.
  */
 int validarCampoNoVacio(const char *texto) {
-    if (texto == NULL || *texto == '\0') return 0;
+    if (texto == NULL || *texto == '\0') 
+        return 0;
     while (*texto != '\0') {
-        if (!isspace((unsigned char)*texto)) return 1;
-        texto++;
+        if (!isspace((unsigned char)*texto)) 
+            return 1;//si encuentra un caracter visible retorna 1
+        texto++;//avanza al siguiente caracter
     }
     return 0;
 }
 
 /*
- * Extrae tokens considerando campos vacios entre numerales (##).
+ * Extrae elementos considerando campos vacios entre numerales (##).
  */
 static char* extraerElemento(char **cadena, const char *delimitador) {
-    if (*cadena == NULL) return NULL;
-    char *inicio = *cadena;
-    char *p = strpbrk(inicio, delimitador);
+    if (*cadena == NULL) //si la cadena es nula retorna nulo
+        return NULL;
+    char *inicio = *cadena;//puntero al inicio de la cadena
+    char *p = strpbrk(inicio, delimitador);//busca el primer delimitador en la cadena
     if (p) {
         *p = '\0';
         *cadena = p + 1;
@@ -43,107 +46,153 @@ static char* extraerElemento(char **cadena, const char *delimitador) {
 *agrega los lotes de libros al catalogo
 */
 void agregarLote(void) {
-    char ruta[256];
+    char *ruta = (char *)malloc(MAX_RUTA * sizeof(char));// Para almacenar la ruta del archivo de texto plano
+    if (ruta == NULL) {
+        printf("Error: No se pudo asignar memoria para la ruta.\n");
+        return;//si no se puede asignar memoria para la ruta retorna
+    }
+    
     printf("Ingrese la ruta del archivo de texto plano a procesar: ");
-    if (fgets(ruta, sizeof(ruta), stdin) == NULL) return;
-    ruta[strcspn(ruta, "\r\n")] = 0;
+    if (fgets(ruta, MAX_RUTA, stdin) == NULL) {
+        free(ruta);
+        return;//si no se puede leer la ruta retorna
+    }
+    ruta[strcspn(ruta, "\r\n")] = 0;// Limpiar saltos de linea
 
-    FILE *archivo = fopen(ruta, "r");
+    FILE *archivo = fopen(ruta, "r");// Abrir el archivo de texto plano en modo lectura
     if (!archivo) { 
         printf("--------------------------------------------------\n");
         printf("Error: No se pudo abrir el archivo en la ruta: %s\n", ruta);
         printf("--------------------------------------------------\n");
-        return;
+        free(ruta);
+        return;//si no se puede abrir el archivo retorna
     }
 
-    char linea[1024];
-    int procesados = 0;
-    int no_procesados = 0;
-    int numero_linea = 0;
+    char *linea = (char *)malloc(MAX_LINEA * sizeof(char));
+    if (linea == NULL) {
+        printf("Error: No se pudo asignar memoria para la línea.\n");
+        fclose(archivo);
+        free(ruta);
+        return;//si no se puede asignar memoria para la linea retorna
+    }
+    
+    int procesados = 0;//cantidad de registros procesados exitosamente
+    int no_procesados = 0;//cantidad de registros no procesados por errores de validacion
+    int numero_linea = 0;//numero de linea actual del archivo de texto plano
 
     printf("\n--- Procesando Archivo de Lote ---\n");
 
-    while (fgets(linea, sizeof(linea), archivo)) {
+    while (fgets(linea, MAX_LINEA, archivo)) {
         numero_linea++;
         linea[strcspn(linea, "\r\n")] = 0; // Limpiar saltos de linea Windows/Linux
 
         if (!validarCampoNoVacio(linea)) continue;//si la linea esta 100% vacia se ignora
 
-        Produccion prod;
-        memset(&prod, 0, sizeof(Produccion));// Inicializar la estructura de producción
+        Produccion prod;//estructura para almacenar los datos de la produccion
+        prod.nombre = NULL;//inicializa los punteros a NULL para evitar errores de memoria
+        prod.autor = NULL;
+        prod.genero = NULL;
+        prod.resumen = NULL;
 
-        char *cursor = linea;
-        char *token = NULL;
+        char *cursor = linea;//puntero para recorrer la linea y extraer los elementos
+        char *elemento = NULL;//puntero para almacenar cada elemento extraido
 
         //valida Nombre
-        token = extraerElemento(&cursor, "#");
-        if (!validarCampoNoVacio(token)) {
+        elemento = extraerElemento(&cursor, "#");//extrae el primer elemento de la linea hasta el primer # o hasta el final de la linea
+        if (!validarCampoNoVacio(elemento)) {
             printf("[OMITIDO - Línea %d] Falta el campo 'Nombre' por completar.\n", numero_linea);
             no_procesados++;
             continue;
         }
-        snprintf(prod.nombre, sizeof(prod.nombre), "%s", token);
+        prod.nombre = (char *)malloc(strlen(elemento) + 1);//reserva memoria para el nombre
+        strcpy(prod.nombre, elemento);//copia el nombre a la estructura
 
         //valida que no haya repetidos/unicidad(el nombre da la unicidad)
         if (existeProduccionJSON(prod.nombre)) {
             printf("[OMITIDO - Línea %d] La producción '%s' ya existe en el catálogo.\n", numero_linea, prod.nombre);
+            free(prod.nombre);//libera la memoria del nombre
             no_procesados++;
             continue;
         }
 
         //valida autor
-        token = extraerElemento(&cursor, "#");
-        if (!validarCampoNoVacio(token)) {
+        elemento = extraerElemento(&cursor, "#");
+        if (!validarCampoNoVacio(elemento)) {
             printf("[OMITIDO - Línea %d] En '%s': falta el campo 'Autor' por completar.\n", numero_linea, prod.nombre);
+            free(prod.nombre);//libera la memoria del nombre
             no_procesados++;
             continue;
         }
-        snprintf(prod.autor, sizeof(prod.autor), "%s", token);
+        prod.autor = (char *)malloc(strlen(elemento) + 1);//reserva memoria para el autor
+        strcpy(prod.autor, elemento);
 
         //valida Año de publicacion del libro
-        token = extraerElemento(&cursor, "#");
-        if (!validarCampoNoVacio(token)) {
+        elemento = extraerElemento(&cursor, "#");
+        if (!validarCampoNoVacio(elemento)) {
             printf("[OMITIDO - Línea %d] En '%s': falta el campo 'Año de publicación' por completar.\n", numero_linea, prod.nombre);
+            free(prod.nombre);
+            free(prod.autor);//libera la memoria del nombre y autor
             no_procesados++;
             continue;
         }
-        prod.anio_publicacion = atoi(token);
+        prod.anio_publicacion = atoi(elemento);
 
         //valida genero del libro
-        token = extraerElemento(&cursor, "#");
-        if (!validarCampoNoVacio(token)) {
+        elemento = extraerElemento(&cursor, "#");
+        if (!validarCampoNoVacio(elemento)) {
             printf("[OMITIDO - Línea %d] En '%s': falta el campo 'Género' por completar.\n", numero_linea, prod.nombre);
+            free(prod.nombre);
+            free(prod.autor);
             no_procesados++;
             continue;
         }
-        snprintf(prod.genero, sizeof(prod.genero), "%s", token);
+        prod.genero = (char *)malloc(strlen(elemento) + 1);//reserva memoria para el genero
+        strcpy(prod.genero, elemento);
 
         //valida resumen
-        token = extraerElemento(&cursor, "#");
-        if (!validarCampoNoVacio(token)) {
+        elemento = extraerElemento(&cursor, "#");
+        if (!validarCampoNoVacio(elemento)) {
             printf("[OMITIDO - Línea %d] En '%s': falta el campo 'Resumen' por completar.\n", numero_linea, prod.nombre);
+            free(prod.nombre);
+            free(prod.autor);
+            free(prod.genero);
             no_procesados++;
             continue;
         }
-        snprintf(prod.resumen, sizeof(prod.resumen), "%s", token);
+        prod.resumen = (char *)malloc(strlen(elemento) + 1);//reserva memoria para el resumen
+        strcpy(prod.resumen, elemento);
 
         //Valida cantidad
-        token = extraerElemento(&cursor, "#");
-        if (!validarCampoNoVacio(token)) {
+        elemento = extraerElemento(&cursor, "#");
+        if (!validarCampoNoVacio(elemento)) {
             printf("[OMITIDO - Línea %d] En '%s': falta el campo 'Cantidad' por completar.\n", numero_linea, prod.nombre);
+            free(prod.nombre);
+            free(prod.autor);
+            free(prod.genero);
+            free(prod.resumen);
             no_procesados++;
             continue;
         }
-        prod.cantidad = atoi(token);
+        prod.cantidad = atoi(elemento);//convierte el elemento a entero para la cantidad de ejemplares
 
         if (prod.cantidad <= 0) {
             printf("[OMITIDO - Línea %d] En '%s': la cantidad debe ser mayor a 0.\n", numero_linea, prod.nombre);
+            free(prod.nombre);
+            free(prod.autor);
+            free(prod.genero);
+            free(prod.resumen);
             no_procesados++;
             continue;
         }
 
         guardarProduccionJSON(prod);
         generarEjemplaresJSON(prod.nombre, prod.cantidad);
+
+        //libera la memoria de los campos de la estructura prod
+        free(prod.nombre);
+        free(prod.autor);
+        free(prod.genero);
+        free(prod.resumen);
 
         procesados++;
     }
@@ -155,6 +204,9 @@ void agregarLote(void) {
     printf("Registros procesados con éxito: %d\n", procesados);
     printf("Registros no procesados/omitidos: %d\n", no_procesados);
     printf("==================================================\n");
+    
+    free(linea);
+    free(ruta);
 }
 
 
@@ -171,9 +223,15 @@ void mostrarCatalogo(void) {
         return;
     }
 
-    char contenedor[20000]; // Para almacenar el JSON
-    size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) - 1, archivo);//leer el contenido del archivo JSON
-    contenedor[largoArchivo] = '\0';//Agregar un caracter nulo al final del buffer
+    char *contenedor = (char *)malloc(MAX_CONTENEDOR_CATALOGO * sizeof(char));
+    if (contenedor == NULL) {
+        printf("Error: No se pudo asignar memoria para el contenedor.\n");
+        fclose(archivo);
+        return;//si no se puede asignar memoria para el contenedor retorna
+    }
+    
+    size_t largoArchivo = fread(contenedor, 1, MAX_CONTENEDOR_CATALOGO - 1, archivo);// Leer el contenido del archivo JSON
+    contenedor[largoArchivo] = '\0';
     fclose(archivo);
 
     cJSON *raiz = cJSON_Parse(contenedor);// Convertir el contenido del contenedor a un objeto JSON
@@ -182,6 +240,7 @@ void mostrarCatalogo(void) {
         printf("\n--------------------------------------------------\n");
         printf("Error al leer el archivo de catálogo o está vacío.\n");
         printf("--------------------------------------------------\n");
+        free(contenedor);
         return;
     }
 
@@ -192,6 +251,7 @@ void mostrarCatalogo(void) {
         printf("El catálogo está vacío.\n");
         printf("--------------------------------------------------\n");
         cJSON_Delete(raiz);
+        free(contenedor);
         return;
     }
 
@@ -219,6 +279,7 @@ void mostrarCatalogo(void) {
     }
 
     cJSON_Delete(raiz);
+    free(contenedor);
 }
 
 /*

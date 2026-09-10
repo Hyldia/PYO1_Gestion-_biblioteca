@@ -233,13 +233,18 @@ int existeProduccionJSON(const char *nombre) {
     FILE *archivo = fopen("data/catalogo.json", "r");// Abrir el archivo JSON en modo lectura
     if (archivo == NULL) return 0;
 
-    char contenedor[10000];// Para almacenar el JSON
-    size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) - 1, archivo);//leer el contenido del archivo JSON
-    contenedor[largoArchivo] = '\0'; //Agregar un caracter nulo al final del buffer
+    char *contenedor = (char *)malloc(MAX_CONTENEDOR_CATALOGO * sizeof(char));
+    if (contenedor == NULL) return 0;
+    
+    size_t largoArchivo = fread(contenedor, 1, MAX_CONTENEDOR_CATALOGO - 1, archivo);
+    contenedor[largoArchivo] = '\0';
     fclose(archivo);
 
     cJSON *raiz = cJSON_Parse(contenedor);
-    if (raiz == NULL) return 0;
+    if (raiz == NULL) {
+        free(contenedor);
+        return 0;
+    }
 
     int cantidad = cJSON_GetArraySize(raiz);// Obtener la cantidad de producciones en el array de producciones
     for (int i = 0; i < cantidad; i++) {
@@ -247,11 +252,13 @@ int existeProduccionJSON(const char *nombre) {
         cJSON *nom = cJSON_GetObjectItem(prod, "nombre");
         if (nom && nom->valuestring && strcmp(nom->valuestring, nombre) == 0) {//Compara el nombre de la produccion con el nombre buscado
             cJSON_Delete(raiz);
+            free(contenedor);
             return 1;
         }
     }
 
-    cJSON_Delete(raiz);// Liberar la memoria del objeto JSON
+    cJSON_Delete(raiz);
+    free(contenedor);
     return 0;
 }
 
@@ -259,13 +266,18 @@ int existeProduccionJSON(const char *nombre) {
  * Guarda una nueva produccion en catalogo.json.
  */
 void guardarProduccionJSON(Produccion prod) {
-    FILE *archivo;//Puntero al archivo JSON
-    char contenedor[10000];// Para almacenar el JSON
+    FILE *archivo;
+    char *contenedor = (char *)malloc(MAX_CONTENEDOR_CATALOGO * sizeof(char));
+    if (contenedor == NULL) {
+        printf("Error: No se pudo asignar memoria para el contenedor.\n");
+        return;
+    }
+    
     cJSON *raiz = NULL;
 
     archivo = fopen("data/catalogo.json", "r");// Abrir el archivo JSON en modo lectura
     if (archivo != NULL) {
-        size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) - 1, archivo);
+        size_t largoArchivo = fread(contenedor, 1, MAX_CONTENEDOR_CATALOGO - 1, archivo);
         contenedor[largoArchivo] = '\0';
         fclose(archivo);
         raiz = cJSON_Parse(contenedor);
@@ -294,6 +306,7 @@ void guardarProduccionJSON(Produccion prod) {
 
     free(jsonString);
     cJSON_Delete(raiz);
+    free(contenedor);
 }
 
 
@@ -308,12 +321,17 @@ void guardarProduccionJSON(Produccion prod) {
 
 void generarEjemplaresJSON(const char *nombre, int cantidad) {
     FILE *archivo;
-    char contenedor[20000];// Para almacenar el JSON
-    cJSON *raiz = NULL; //Puntero a la raiz del JSON
+    char *contenedor = (char *)malloc(MAX_CONTENEDOR_CATALOGO * sizeof(char));
+    if (contenedor == NULL) {
+        printf("Error: No se pudo asignar memoria para el contenedor.\n");
+        return;
+    }
+    
+    cJSON *raiz = NULL;
 
     archivo = fopen("data/ejemplares.json", "r");// Abrir el archivo JSON en modo lectura
     if (archivo != NULL) {
-        size_t largoArchivo = fread(contenedor, 1, sizeof(contenedor) - 1, archivo);
+        size_t largoArchivo = fread(contenedor, 1, MAX_CONTENEDOR_CATALOGO - 1, archivo);
         contenedor[largoArchivo] = '\0';
         fclose(archivo);
         raiz = cJSON_Parse(contenedor);
@@ -326,8 +344,12 @@ void generarEjemplaresJSON(const char *nombre, int cantidad) {
     for (int i = 1; i <= cantidad; i++) {// Crear un nuevo objeto JSON para cada ejemplar
         cJSON *ejemplar = cJSON_CreateObject();
 
-        char idEjemplar[256];//char buffer para almacenar el ID del ejemplar
-        snprintf(idEjemplar, sizeof(idEjemplar), "%s: %d", nombre, i);
+        char *idEjemplar = (char *)malloc(256 * sizeof(char));
+        if (idEjemplar == NULL) {
+            cJSON_Delete(ejemplar);
+            continue;
+        }
+        snprintf(idEjemplar, 256, "%s: %d", nombre, i);
 
         cJSON_AddStringToObject(ejemplar, "id", idEjemplar);// Agregar el ID del ejemplar al objeto JSON
         cJSON_AddStringToObject(ejemplar, "produccion", nombre);// Agregar el nombre de la produccion al objeto JSON
@@ -344,5 +366,6 @@ void generarEjemplaresJSON(const char *nombre, int cantidad) {
     }
 
     free(jsonString);
-    cJSON_Delete(raiz);// Liberar la memoria del objeto JSON
+    cJSON_Delete(raiz);
+    free(contenedor);
 }
