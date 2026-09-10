@@ -130,7 +130,7 @@ static void menuOperativas(void) {
                 menuUsuarios();
                 break;
             case 3:
-                printf("\n(Pendiente)\n");
+                mostrarHistorialPrestamos();
                 break;
             case 4:
                 printf("\n(Pendiente)\n");

@@ -13,6 +13,9 @@
 #include "persistencia.h"
 #include "tipos.h"
 
+#include <time.h>
+#include <cjson/cJSON.h>
+
 /* Helpers generales*/
 
 /* Objetivo:  crear una copia en memoria dinamica de una cadena
@@ -335,4 +338,161 @@ void registrarPrestamo(void) {
     imprimirComprobante(&prestamo);
 
     liberarPrestamo(&prestamo);
+}
+
+/* Objetivo:obtener la fecha del sistema en formato "YYYY-MM-DD".
+* Entradas: ninguna.
+* Salidas: puntero malloc con la fecha (11 bytes); el que llama lo libera.NULL si falla la reserva.
+*/
+static char *fechaHoy(void) {
+    char *fecha = malloc(11);// "YYYY-MM-DD" + '\0'. porque 10+1=11 para el malloc
+    if (fecha == NULL){
+        return NULL;
+    }
+    time_t t = time(NULL);
+    struct tm *lt = localtime(&t);
+    strftime(fecha, 11, "%Y-%m-%d", lt);
+    return fecha;
+}
+/*
+* Objetivo:calcular el estado que se debe mostrar de un prestamo.
+* Entradas:estadoGuardado - lo que dice prestamos.json ("activo"/"finalizado").
+*  fechaEntrega - fecha de entrega pactada.
+*  hoy - fecha del sistema.
+* Salidas: "finalizado", "vencido" o "activo".
+* Restricciones: compara fechas como texto (formato YYYY-MM-DD).
+*/
+static const char *estadoParaMostrar(const char *estadoGuardado, const char*fechaEntrega,const char *hoy) {
+    if (estadoGuardado != NULL && strcmp(estadoGuardado, "finalizado") == 0) {
+        return "finalizado";
+    }
+    if (fechaEntrega != NULL && strcmp(fechaEntrega, hoy) < 0) {
+        return "vencido";
+    }
+    return "activo";
+}
+
+/*Objetivo:  mostrar los prestamos cuya fecha de entrega cae dentro de un rango indicado por el usuario.
+* Entradas:por consola: fecha inicio y fecha fin del rango.
+* Salidas: imprime id, usuario, estado, ejemplares (nombre + id) y entrega tardia de cada prestamo del rango.
+* Restricciones: el filtro es por "fecha_entrega". Vacio en una fecha cancela.
+*/
+void mostrarHistorialPrestamos(void) {
+    //para pedir el inicio del rango, se reutiliza la funcion pedirFecha
+    char *desde = pedirFecha("Fecha inicio del rango (YYYY-MM-DD, vacio para cancelar): ");
+    if (desde == NULL) {
+        printf("Operacion cancelada.\n");
+        return;
+    }
+
+    // para pedir la fecha fin del rango, se reutiliza la funcion pedirFecha
+    char *hasta = pedirFecha("Fecha fin del rango (YYYY-MM-DD, vacio para cancelar): ");
+    if (hasta == NULL) { printf("Operacion cancelada.\n"); free(desde); return; }
+
+    // para validar que desde <= hasta, se comparan como cadenas (formato YYYY-MM-DD)
+    if (strcmp(desde, hasta) > 0) {
+        printf("El rango es invalido (inicio posterior a fin).\n");
+        free(desde); free(hasta);
+        return;
+    }
+
+    // para obtener la fecha de hoy, se reutiliza la funcion fechaHoy
+    char *hoy = fechaHoy();
+    if (hoy == NULL) { free(desde); free(hasta); return; }
+
+    // para leer el archivo prestamos.json, se reutiliza la funcion leerArchivoCompleto
+    FILE *archivo = fopen("data/prestamos.json", "r");
+    if (archivo == NULL) {
+        printf("No hay prestamos registrados.\n");
+        free(desde); free(hasta); free(hoy);
+        return;
+    }
+    //para leer el contenido completo del archivo, se reutiliza la funcion leerArchivoCompleto
+    char *contenido = leerArchivoCompleto(archivo);
+    fclose(archivo);
+
+    cJSON *raiz = cJSON_Parse(contenido);
+    free(contenido);
+
+    if (!cJSON_IsArray(raiz)) {
+        printf("No hay prestamos registrados.\n");
+        cJSON_Delete(raiz);
+        free(desde); free(hasta); free(hoy);
+        return;
+    }
+
+    // para cada prestamo se obtiene la fecha de entrega y se compara con el rango. Si esta dentro del rango se imprime.
+    printf("\n===== HISTORIAL DE PRESTAMOS (%s a %s) =====\n", desde, hasta);
+
+    int mostrados = 0;
+    int total = cJSON_GetArraySize(raiz);
+    for (int i = 0; i < total; i++) {
+        cJSON *p = cJSON_GetArrayItem(raiz, i);
+
+        cJSON *jEntrega = cJSON_GetObjectItem(p, "fecha_entrega");
+        if (!cJSON_IsString(jEntrega)) continue;
+        const char *fEntrega = jEntrega->valuestring;
+
+        // filtro: desde <= fecha_entrega <= hasta
+        if (strcmp(fEntrega, desde) < 0 || strcmp(fEntrega, hasta) > 0) {
+            continue;
+        }
+
+        cJSON *jId      = cJSON_GetObjectItem(p, "id");
+        cJSON *jUsuario = cJSON_GetObjectItem(p, "usuario");
+        cJSON *jEstado  = cJSON_GetObjectItem(p, "estado");
+        cJSON *jEjs     = cJSON_GetObjectItem(p, "ejemplares");
+        cJSON *jDevol   = cJSON_GetObjectItem(p, "fecha_devolucion");
+
+        const char *estadoGuardado = cJSON_IsString(jEstado) ? jEstado->valuestring : "activo";
+        const char *estado = estadoParaMostrar(estadoGuardado, fEntrega, hoy);
+
+        printf("\n--------------------------------------------------\n");
+        printf("Prestamo #%d\n", cJSON_IsNumber(jId) ? jId->valueint : 0);
+        printf("Usuario:       %s\n", cJSON_IsString(jUsuario) ? jUsuario->valuestring : "?");
+        printf("Estado:        %s\n", estado);
+        printf("Fecha entrega: %s\n", fEntrega);
+
+        printf("Ejemplares:\n");
+        if (cJSON_IsArray(jEjs)) {
+            int ne = cJSON_GetArraySize(jEjs);
+            for (int k = 0; k < ne; k++) {
+                cJSON *item = cJSON_GetArrayItem(jEjs, k);
+                if (!cJSON_IsString(item)) continue;
+
+                char *nombre = obtenerProduccionEjemplarJSON(item->valuestring);
+                if (nombre != NULL) {
+                    printf("   - %s  (id: %s)\n", nombre, item->valuestring);
+                    free(nombre);
+                } else {
+                    printf("   - ?  (id: %s)\n", item->valuestring);
+                }
+            }
+        }
+
+        // entrega tardia
+        printf("Entrega tardia: ");
+        if (strcmp(estadoGuardado, "finalizado") == 0 && cJSON_IsString(jDevol)) {
+            if (strcmp(jDevol->valuestring, fEntrega) > 0) {
+                printf("si\n");
+            } else {
+                printf("no\n");
+            }
+        } else {
+            printf("-\n");
+        }
+
+        mostrados++;
+    }
+
+    if (mostrados == 0) {
+        printf("\nNo hay prestamos con fecha de entrega en ese rango.\n");
+    }
+    printf("==================================================\n");
+
+    // liberar memoria
+    cJSON_Delete(raiz);
+    free(desde);
+    free(hasta);
+    free(hoy);
 }

@@ -4,6 +4,8 @@
 
 #ifndef PERSISTENCIA_H
 #define PERSISTENCIA_H
+
+#include <stdio.h>
 #include "tipos.h"
 
 void guardarUsuariosJSON(Usuario usuario);
@@ -24,5 +26,7 @@ int  siguienteIdPrestamoJSON(void);
 void guardarPrestamoJSON(Prestamo prestamo);
 void cambiarEstadoEjemplarJSON(const char *idEjemplar, const char *nuevoEstado);
 char *obtenerProduccionEjemplarJSON(const char *idEjemplar);
+
+char *leerArchivoCompleto(FILE *archivo);
 
 #endif
