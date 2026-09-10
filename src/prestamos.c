@@ -387,7 +387,11 @@ void mostrarHistorialPrestamos(void) {
 
     // para pedir la fecha fin del rango, se reutiliza la funcion pedirFecha
     char *hasta = pedirFecha("Fecha fin del rango (YYYY-MM-DD, vacio para cancelar): ");
-    if (hasta == NULL) { printf("Operacion cancelada.\n"); free(desde); return; }
+    if (hasta == NULL) {
+        printf("Operacion cancelada.\n");
+        free(desde);
+        return;
+    }
 
     // para validar que desde <= hasta, se comparan como cadenas (formato YYYY-MM-DD)
     if (strcmp(desde, hasta) > 0) {
@@ -494,5 +498,135 @@ void mostrarHistorialPrestamos(void) {
     cJSON_Delete(raiz);
     free(desde);
     free(hasta);
+    free(hoy);
+}
+/*
+* Objetivo:imprimir los datos de un prestamo.
+* Entradas:p   - objeto cJSON del prestamo.
+* hoy - fecha del sistema (para calcular "vencido").
+* Salidas: imprime id, usuario, estado, fecha de entrega, ejemplares y entrega tardia.
+*/
+static void imprimirUnPrestamo(cJSON *p, const char *hoy) {
+    cJSON *jId      = cJSON_GetObjectItem(p, "id");
+    cJSON *jUsuario = cJSON_GetObjectItem(p, "usuario");
+    cJSON *jEstado  = cJSON_GetObjectItem(p, "estado");
+    cJSON *jEntrega = cJSON_GetObjectItem(p, "fecha_entrega");
+    cJSON *jEjs     = cJSON_GetObjectItem(p, "ejemplares");
+    cJSON *jDevol   = cJSON_GetObjectItem(p, "fecha_devolucion");
+
+    // fecha de entrega como texto
+    const char *fEntrega;
+    if (cJSON_IsString(jEntrega)) {
+        fEntrega = jEntrega->valuestring;
+    } else {
+        fEntrega = "?";
+    }
+
+    // estado guardado en el archivo
+    const char *estadoGuardado;
+    if (cJSON_IsString(jEstado)) {
+        estadoGuardado = jEstado->valuestring;
+    } else {
+        estadoGuardado = "activo";
+    }
+
+    // estado a mostrar
+    const char *estado = estadoParaMostrar(estadoGuardado, fEntrega, hoy);
+
+    // id
+    int id = 0;
+    if (cJSON_IsNumber(jId)) {
+        id = jId->valueint;
+    }
+
+    // usuario
+    const char *usuario;
+    if (cJSON_IsString(jUsuario)) {
+        usuario = jUsuario->valuestring;
+    } else {
+        usuario = "?";
+    }
+
+    printf("\n--------------------------------------------------\n");
+    printf("Prestamo #%d\n", id);
+    printf("Usuario:       %s\n", usuario);
+    printf("Estado:        %s\n", estado);
+    printf("Fecha entrega: %s\n", fEntrega);
+
+    printf("Ejemplares:\n");
+    if (cJSON_IsArray(jEjs)) {
+        int ne = cJSON_GetArraySize(jEjs);
+        for (int k = 0; k < ne; k++) {
+            cJSON *item = cJSON_GetArrayItem(jEjs, k);
+            if (!cJSON_IsString(item)) {
+                continue;
+            }
+
+            char *nombre = obtenerProduccionEjemplarJSON(item->valuestring);
+            if (nombre != NULL) {
+                printf("   - %s  (id: %s)\n", nombre, item->valuestring);
+                free(nombre);
+            } else {
+                printf("   - ?  (id: %s)\n", item->valuestring);
+            }
+        }
+    }
+
+    printf("Entrega tardia: ");
+    if (strcmp(estadoGuardado, "finalizado") == 0 && cJSON_IsString(jDevol)) {
+        if (strcmp(jDevol->valuestring, fEntrega) > 0) {
+            printf("si\n");
+        } else {
+            printf("no\n");
+        }
+    } else {
+        printf("-\n");
+    }
+}
+/*
+* Objetivo:mostrar TODOS los prestamos registrados, sin filtrar por fechas.
+* Entradas:ninguna.
+* Salidas:imprime cada prestamo con id, usuario, estado, ejemplares y entrega tardia.
+*/
+void mostrarTodosLosPrestamos(void) {
+
+    char *hoy = fechaHoy();
+    if (hoy == NULL) {
+        return;
+    }
+
+    FILE *archivo = fopen("data/prestamos.json", "r");
+    if (archivo == NULL) {
+        printf("No hay prestamos registrados.\n");
+        free(hoy);
+        return;
+    }
+
+    char *contenido = leerArchivoCompleto(archivo);
+    fclose(archivo);
+
+    cJSON *raiz = cJSON_Parse(contenido);
+    free(contenido);
+
+    if (!cJSON_IsArray(raiz)) {
+        printf("No hay prestamos registrados.\n");
+        cJSON_Delete(raiz);
+        free(hoy);
+        return;
+    }
+
+    int total = cJSON_GetArraySize(raiz);
+    if (total == 0) {
+        printf("No hay prestamos registrados.\n");
+    } else {
+        printf("\n===== TODOS LOS PRESTAMOS =====\n");
+        for (int i = 0; i < total; i++) {
+            cJSON *p = cJSON_GetArrayItem(raiz, i);
+            imprimirUnPrestamo(p, hoy);
+        }
+        printf("==================================================\n");
+    }
+
+    cJSON_Delete(raiz);
     free(hoy);
 }
