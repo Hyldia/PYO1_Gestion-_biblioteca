@@ -23,5 +23,6 @@ int  ejemplarDisponibleJSON(const char *idEjemplar, const char *fInicio, const c
 int  siguienteIdPrestamoJSON(void);
 void guardarPrestamoJSON(Prestamo prestamo);
 void cambiarEstadoEjemplarJSON(const char *idEjemplar, const char *nuevoEstado);
+char *obtenerProduccionEjemplarJSON(const char *idEjemplar);
 
 #endif

@@ -256,8 +256,14 @@ static void imprimirComprobante(const Prestamo *p) {
     printf("Fecha inicio:%s\n", p->fecha_inicio);
     printf("Fecha entrega: %s\n", p->fecha_entrega);
     printf("Ejemplares prestados:\n");
-    for (int i = 0; i < p->cantidad_ejemplares; i++) {
-        printf("   - %s\n", p->ejemplares[i]);
+     for (int i = 0; i < p->cantidad_ejemplares; i++) {
+        char *nombre = obtenerProduccionEjemplarJSON(p->ejemplares[i]);
+        if (nombre != NULL) {
+            printf("   - %s  (id: %s)\n", nombre, p->ejemplares[i]);
+            free(nombre);
+        } else {
+            printf("   - ?  (id: %s)\n", p->ejemplares[i]);
+        }
     }
     printf("==================================================\n");
 }

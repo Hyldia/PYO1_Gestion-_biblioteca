@@ -19,4 +19,11 @@
 		"fecha_entrega":	"2026-11-20",
 		"estado":	"activo",
 		"ejemplares":	["Cien años de soledad- 3"]
+	}, {
+		"id":	4,
+		"usuario":	"702810276",
+		"fecha_inicio":	"2026-06-12",
+		"fecha_entrega":	"2026-12-12",
+		"estado":	"activo",
+		"ejemplares":	["Cien años de soledad- 1"]
 	}]

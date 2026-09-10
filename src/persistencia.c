@@ -714,3 +714,32 @@ void cambiarEstadoEjemplarJSON(const char *idEjemplar, const char *nuevoEstado) 
     escribirArchivoJSON("data/ejemplares.json", raiz);
     cJSON_Delete(raiz);
 }
+/*
+* Objetivo: obtener el nombre de la produccion a la que pertenece un ejemplar.
+* Entradas: idEjemplar - identificador del ejemplar.
+* Salidas:puntero malloc con el nombre (el que llama lo libera con free) o NULL si el ejemplar no existe.
+*/
+char *obtenerProduccionEjemplarJSON(const char *idEjemplar) {
+    cJSON *raiz = cargarArchivoJSON("data/ejemplares.json");
+    if (!cJSON_IsArray(raiz)) {
+        cJSON_Delete(raiz);
+        return NULL;
+    }
+
+    char *nombre = NULL;
+    int cantidad = cJSON_GetArraySize(raiz);
+    for (int i = 0; i < cantidad && nombre == NULL; i++) {
+        cJSON *ej = cJSON_GetArrayItem(raiz, i);
+        cJSON *id = cJSON_GetObjectItem(ej, "id");
+        if (cJSON_IsString(id) && strcmp(id->valuestring, idEjemplar) == 0) {
+            cJSON *prod = cJSON_GetObjectItem(ej, "produccion");
+            if (cJSON_IsString(prod)) {
+                nombre = malloc(strlen(prod->valuestring) + 1);
+                if (nombre != NULL) strcpy(nombre, prod->valuestring);
+            }
+        }
+    }
+
+    cJSON_Delete(raiz);
+    return nombre;
+}
