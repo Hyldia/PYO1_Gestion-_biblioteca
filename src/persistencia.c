@@ -731,8 +731,9 @@ char *obtenerProduccionEjemplarJSON(const char *idEjemplar) {
     return nombre;
 }
 
+/*--------------------Devolucoiones-------------------------------*/
+
 /*
-2
 * Objetivo: Buscar un prestamo activo segun su ID.
 * Entradas: Identificador del prestamo.
 * Salidas:
@@ -758,6 +759,43 @@ int existePrestamoActivoJSON(int idPrestamo){
         if(id->valueint == idPrestamo && strcmp(estado->valuestring, "activo") == 0){
             cJSON_Delete(raiz);
             return 1;
+        }
+    }
+    cJSON_Delete(raiz);
+    return 0;
+}
+
+/*
+* Objetivo: Obtener las fechas asociadas a un préstamo.
+* Entradas: Identificador del préstamo.
+* Salidas: FechaInicio y fechaEntrega.
+* Retorna:
+    - 1 si encuentra el préstamo.
+    - 0 si no existe.
+*/
+int obtenerFechasPrestamoJSON(int idPrestamo, char *fechaInicio, char *fechaEntrega){
+    cJSON *raiz = cargarArchivoJSON("data/prestamos.json");
+    if(!cJSON_IsArray(raiz)){
+        cJSON_Delete(raiz);
+        return 0;
+    }
+    int cantidad = cJSON_GetArraySize(raiz);
+    for(int i = 0; i < cantidad; i++){
+        cJSON *prestamo = cJSON_GetArrayItem(raiz, i);
+        cJSON *id = cJSON_GetObjectItem(prestamo, "id");
+
+        if(!cJSON_IsNumber(id)){
+            continue;
+        }
+        if(id->valueint == idPrestamo){
+            cJSON *inicio = cJSON_GetObjectItem(prestamo, "fecha_inicio");
+            cJSON *entrega = cJSON_GetObjectItem(prestamo, "fecha_entrega");
+            if(cJSON_IsString(inicio) && cJSON_IsString(entrega)){
+                strcpy(fechaInicio, inicio->valuestring);
+                strcpy(fechaEntrega, entrega->valuestring);
+                cJSON_Delete(raiz);
+                return 1;
+            }
         }
     }
     cJSON_Delete(raiz);
