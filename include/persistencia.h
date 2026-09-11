@@ -33,4 +33,7 @@ int finalizarPrestamoJSON(int idPrestamo, const char *fechaDevoucion);
 
 char *leerArchivoCompleto(FILE *archivo);
 
+//busquedas
+ResultadoBusquedaEjemplar** buscarEjemplarSimple(const char *dato, int *total_encontrados);
+
 #endif

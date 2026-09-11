@@ -43,4 +43,12 @@ typedef struct {
     char **ejemplares; 
     int cantidad_ejemplares;
 } Prestamo;
+
+typedef struct {
+    char *id_ejemplar;
+    char *nombre_produccion;
+    char *resumen;
+    char *estado;
+} ResultadoBusquedaEjemplar;
+
 #endif

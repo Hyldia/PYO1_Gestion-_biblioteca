@@ -5,6 +5,7 @@
 #include "usuarios.h"
 #include "catalogo.h"
 #include "devoluciones.h"
+#include "busquedas.h"
 
 /*
 * Objetivo: leer un numero de opcion de la consola y limpiar el resto de la linea.
@@ -71,7 +72,7 @@ static void menuGenerales(void) {
 
         switch (opcion) {
             case 1: 
-                printf("\n(Pendiente)\n");
+                busquedaSimple();
                 break;
             case 2: 
                 printf("\n(Pendiente)\n");
