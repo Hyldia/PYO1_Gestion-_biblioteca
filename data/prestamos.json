@@ -17,9 +17,8 @@
 		"usuario":	"123456789",
 		"fecha_inicio":	"2026-11-12",
 		"fecha_entrega":	"2026-11-20",
-		"estado":	"finalizado",
-		"ejemplares":	["Cien años de soledad- 3"],
-		"fecha_devolucion":	"26-09-10"
+		"estado":	"activo",
+		"ejemplares":	["Cien años de soledad- 3"]
 	}, {
 		"id":	4,
 		"usuario":	"702810276",

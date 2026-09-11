@@ -4,7 +4,6 @@
 #include "prestamos.h"
 #include "usuarios.h"
 #include "catalogo.h"
-#include "devoluciones.h"
 
 /*
 * Objetivo: leer un numero de opcion de la consola y limpiar el resto de la linea.
@@ -80,7 +79,7 @@ static void menuGenerales(void) {
                 registrarPrestamo();
                 break;
             case 4:
-                registrarDevolucion();
+                printf("\n(Pendiente)\n");
                 break;
             case 0: 
                 printf("Saliendo del menu de opciones generales...\n");

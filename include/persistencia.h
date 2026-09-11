@@ -27,10 +27,6 @@ void guardarPrestamoJSON(Prestamo prestamo);
 void cambiarEstadoEjemplarJSON(const char *idEjemplar, const char *nuevoEstado);
 char *obtenerProduccionEjemplarJSON(const char *idEjemplar);
 
-// Devoluciones
-int existePrestamoActivoJSON(int idPrestamo);
-int finalizarPrestamoJSON(int idPrestamo, const char *fechaDevoucion);
-
 char *leerArchivoCompleto(FILE *archivo);
 
 #endif
