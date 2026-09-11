@@ -3,8 +3,9 @@
 		"usuario":	"123456789",
 		"fecha_inicio":	"2026-09-10",
 		"fecha_entrega":	"2026-09-20",
-		"estado":	"activo",
-		"ejemplares":	["1984- 1"]
+		"estado":	"finalizado",
+		"ejemplares":	["1984- 1"],
+		"fecha_devolucion":	"2026-09-10"
 	}, {
 		"id":	2,
 		"usuario":	"123456789",
