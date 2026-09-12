@@ -201,10 +201,10 @@ static char **pedirEjemplares(const char *fInicio, const char *fFin, int *cantid
     char **ejemplares = NULL;
     *cantidad = 0;
 
-    printf("Ingrese los identificadores de ejemplares.\n");
+    printf("Ingrese los identificadores de ejemplares que desea.\n");
     printf("(deje la linea vacia y presione Enter para terminar)\n");
 
-    while (1) {
+    while (1) { /* while 1 porque es un bucle infinito hasta que se ingrese una linea vacia */
         printf(" id ejemplar: ");
         char *id = leerLinea();
         if (id == NULL){
@@ -227,6 +227,18 @@ static char **pedirEjemplares(const char *fInicio, const char *fFin, int *cantid
         if (!agregarEjemplar(&ejemplares, cantidad, id)) {
             printf("Error de memoria.\n");
             free(id);
+            break;
+        }
+        printf("Desea ingresar otro ejemplar? (s/n): ");
+        char *respuesta = leerLinea();
+        int continuar = 0;
+        if (respuesta != NULL) {
+            if (respuesta[0] == 's' || respuesta[0] == 'S') {
+                continuar = 1;
+            }
+            free(respuesta);
+        }
+        if (!continuar) {
             break;
         }
     }
