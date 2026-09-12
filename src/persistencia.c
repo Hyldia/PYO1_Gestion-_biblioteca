@@ -339,19 +339,6 @@ int existeIdentificacionJSON(const char *identificacion){
 }
 
 /*
-* Verifica si el usuario tiene registros asociados
-* Retorna:
-* 1 Si el usuario tine regitros asociados
-* 0 Si el usuario no tiene regstros asociados
-
-* La funcion actualamnete retorna 0 porue la parte de prestamos no esta implementada todavia.
-*/
-int tieneRegistrosAsociados(const char *identificacion){
-    (void)identificacion;
-    return 0;
-}
-
-/*
  * ---------------------------Catalogo---------------------------
  */
 
@@ -742,4 +729,157 @@ char *obtenerProduccionEjemplarJSON(const char *idEjemplar) {
 
     cJSON_Delete(raiz);
     return nombre;
+}
+
+/*--------------------Devolucoiones-------------------------------*/
+
+/*
+* Objetivo: Buscar un prestamo activo segun su ID.
+* Entradas: Identificador del prestamo.
+* Salidas:
+    - 1 si el prestamo existe y esta activo.
+    - 0 si no existe o esta finalizado.
+* Restricciones: Lee la informacion desde prestamos.json.
+*/
+int existePrestamoActivoJSON(int idPrestamo){
+    cJSON *raiz = cargarArchivoJSON("data/prestamos.json");
+    if(!cJSON_IsArray(raiz)){
+        cJSON_Delete(raiz);
+        return 0;
+    }
+    int cantidad = cJSON_GetArraySize(raiz);
+    for(int i = 0; i < cantidad; i++){
+        cJSON *prestamo = cJSON_GetArrayItem(raiz, i);
+        cJSON *id = cJSON_GetObjectItem(prestamo, "id");
+        cJSON *estado = cJSON_GetObjectItem(prestamo, "estado");
+
+        if(!cJSON_IsNumber(id) || !cJSON_IsString(estado)){
+            continue;
+        }
+        if(id->valueint == idPrestamo && strcmp(estado->valuestring, "activo") == 0){
+            cJSON_Delete(raiz);
+            return 1;
+        }
+    }
+    cJSON_Delete(raiz);
+    return 0;
+}
+
+/*
+* Objetivo: Obtener las fechas asociadas a un préstamo.
+* Entradas: Identificador del préstamo.
+* Salidas: FechaInicio y fechaEntrega.
+* Retorna:
+    - 1 si encuentra el préstamo.
+    - 0 si no existe.
+*/
+int obtenerFechasPrestamoJSON(int idPrestamo, char *fechaInicio, char *fechaEntrega){
+    cJSON *raiz = cargarArchivoJSON("data/prestamos.json");
+    if(!cJSON_IsArray(raiz)){
+        cJSON_Delete(raiz);
+        return 0;
+    }
+    int cantidad = cJSON_GetArraySize(raiz);
+    for(int i = 0; i < cantidad; i++){
+        cJSON *prestamo = cJSON_GetArrayItem(raiz, i);
+        cJSON *id = cJSON_GetObjectItem(prestamo, "id");
+
+        if(!cJSON_IsNumber(id)){
+            continue;
+        }
+        if(id->valueint == idPrestamo){
+            cJSON *inicio = cJSON_GetObjectItem(prestamo, "fecha_inicio");
+            cJSON *entrega = cJSON_GetObjectItem(prestamo, "fecha_entrega");
+            if(cJSON_IsString(inicio) && cJSON_IsString(entrega)){
+                strcpy(fechaInicio, inicio->valuestring);
+                strcpy(fechaEntrega, entrega->valuestring);
+                cJSON_Delete(raiz);
+                return 1;
+            }
+        }
+    }
+    cJSON_Delete(raiz);
+    return 0;
+}
+
+/*
+* Objetivo:  Registrar la devolucion de un prestamo.
+* Entradas: Identificador del prestamo y fechaDevolucion - fecha en formato YYYY-MM-DD.
+* Salidas:
+    - Cambia el estado a "finalizado".
+    - Agrega la fecha de devolucion.
+    - Actualiza los ejemplares asociados a "Disponible".
+* Retorna:
+    - 1 si la operacion tuvo exito.
+    - 0 si el prestamo no existe o ya fue finalizado.
+*/
+int finalizarPrestamoJSON(int idPrestamo, const char *fechaDevolucion){
+    cJSON *raiz = cargarArchivoJSON("data/prestamos.json");
+    if(!cJSON_IsArray(raiz)){
+        cJSON_Delete(raiz);
+        return 0;
+    }
+    int cantidad = cJSON_GetArraySize(raiz);
+    for(int i = 0; i < cantidad; i++){
+        cJSON *prestamo = cJSON_GetArrayItem(raiz, i);
+        cJSON *id = cJSON_GetObjectItem(prestamo, "id");
+
+        if(!cJSON_IsNumber(id)){
+            continue;
+        }
+        if(id->valueint != idPrestamo){
+            continue;
+        }
+        cJSON_ReplaceItemInObject(prestamo, "estado", cJSON_CreateString("finalizado")); // cambia el estado del prestamo de activo a finalizado
+        cJSON_AddStringToObject(prestamo, "fecha_devolucion", fechaDevolucion); // registra la fecha real en que se realizo la devolucion
+        cJSON *ejemplares = cJSON_GetObjectItem(prestamo, "ejemplares"); // obtiene la lista de ejemplares asociados al prestamo
+
+        if(cJSON_IsArray(ejemplares)){
+            int total = cJSON_GetArraySize(ejemplares);
+            for(int j = 0; j < total; j++){
+                cJSON *ejemplar = cJSON_GetArrayItem(ejemplares, j);
+                if(cJSON_IsString(ejemplar)){
+                    cambiarEstadoEjemplarJSON(ejemplar->valuestring, "Disponible"); // libera el ejemplar para que pueda volver a prestarse
+                }
+            }
+        }
+        escribirArchivoJSON("data/prestamos.json", raiz);
+        cJSON_Delete(raiz);
+        return 1;
+    }
+    cJSON_Delete(raiz);
+    return 0;
+}
+
+/*
+* Verifica si el usuario tiene registros asociados
+* Retorna:
+* 1 Si el usuario tine regitros asociados
+* 0 Si el usuario no tiene regstros asociados
+
+* La funcion actualamnete retorna 0 porue la parte de prestamos no esta implementada todavia.
+*/
+int tieneRegistrosAsociados(const char *identificacion){
+    cJSON *raiz= cargarArchivoJSON("data/prestamos.json");
+    if(!cJSON_IsArray(raiz)){
+        cJSON_Delete(raiz);
+        return 0;
+    }
+    int cantidad = cJSON_GetArraySize(raiz);
+    for(int i = 0; i < cantidad; i++){
+        cJSON *prestamo = cJSON_GetArrayItem(raiz, i);
+        cJSON *usuario = cJSON_GetObjectItem(prestamo, "usuario");
+        cJSON *estado = cJSON_GetObjectItem(prestamo, "estado");
+
+        if(!cJSON_IsString(usuario) || !cJSON_IsString(estado)){
+            continue;
+        }
+        // un usuario con prestamos activos o vencidos no puede eliminarse del sistema
+        if(strcmp(usuario->valuestring, identificacion) == 0 && strcmp(estado->valuestring, "activo") == 0){ 
+            cJSON_Delete(raiz);
+            return 1;
+        }
+    }
+    cJSON_Delete(raiz);
+    return 0;
 }
