@@ -150,7 +150,7 @@ static void menuOperativas(void) {
                 }
                 break;
             case 4:
-                printf("\n(Pendiente)\n");
+                mostrarVencimientoPrestamos();
                 break;
             case 5:
                 printf("\n(Pendiente)\n");
