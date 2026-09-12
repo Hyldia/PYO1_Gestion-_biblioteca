@@ -11,8 +11,9 @@
 		"usuario":	"123456789",
 		"fecha_inicio":	"2026-12-01",
 		"fecha_entrega":	"2026-12-12",
-		"estado":	"activo",
-		"ejemplares":	["Orgullo y prejuicio- 2"]
+		"estado":	"finalizado",
+		"ejemplares":	["Orgullo y prejuicio- 2"],
+		"fecha_devolucion":	"2026-09-11"
 	}, {
 		"id":	3,
 		"usuario":	"123456789",
