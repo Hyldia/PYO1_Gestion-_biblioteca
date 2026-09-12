@@ -74,8 +74,8 @@ static void menuGenerales(void) {
             case 1: 
                 busquedaSimple();
                 break;
-            case 2: 
-                printf("\n(Pendiente)\n");
+            case 2:
+                busquedaAvanzada();
                 break;
             case 3:
                 registrarPrestamo();

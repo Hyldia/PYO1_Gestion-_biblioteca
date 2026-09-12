@@ -10,4 +10,10 @@
  */
 void busquedaSimple(void);
 
+/*
+ * Realiza una búsqueda avanzada de ejemplares
+ * Permite filtrar por multiples criterios
+ */
+void busquedaAvanzada(void);
+
 #endif
