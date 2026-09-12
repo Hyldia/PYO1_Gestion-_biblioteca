@@ -28,4 +28,19 @@
 		"fecha_entrega":	"2026-12-12",
 		"estado":	"activo",
 		"ejemplares":	["Cien años de soledad- 1"]
+	}, {
+		"id":	5,
+		"usuario":	"702810276",
+		"fecha_inicio":	"2026-10-09",
+		"fecha_entrega":	"2026-11-05",
+		"estado":	"finalizado",
+		"ejemplares":	["Cien años de soledad- 3"],
+		"fecha_devolucion":	"2026-09-11"
+	}, {
+		"id":	6,
+		"usuario":	"702810276",
+		"fecha_inicio":	"2026-09-01",
+		"fecha_entrega":	"2026-09-10",
+		"estado":	"activo",
+		"ejemplares":	["Cien años de soledad- 3"]
 	}]

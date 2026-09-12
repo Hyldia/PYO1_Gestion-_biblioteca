@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "prestamos.h"
 #include "persistencia.h"
@@ -626,6 +627,175 @@ void mostrarTodosLosPrestamos(void) {
         }
         printf("==================================================\n");
     }
+
+    cJSON_Delete(raiz);
+    free(hoy);
+}
+
+/* Vencimiento de prestamos */
+
+/* Objetivo:convertir una fecha "YYYY-MM-DD" a time_t (segundos)
+* Entradas:fecha - cadena con formato YYYY-MM-DD
+* Salidas:el time_t de esa fecha*/
+static time_t fechaATiempo(const char *fecha) {
+    if (fecha == NULL || strlen(fecha) != 10) { /*strlen es para obtener la longitud de la cadena*/
+        return (time_t)-1; /*es -1 si la fecha es invalida*/
+    }
+    struct tm t; /*estructura para almacenar la fecha*/
+    memset(&t, 0, sizeof(t));
+    t.tm_year  = atoi(fecha) - 1900;// "YYYY"
+    t.tm_mon   = atoi(fecha + 5) - 1;// "MM"
+    t.tm_mday  = atoi(fecha + 8);// "DD"
+    t.tm_hour  = 12;// mediodia
+    t.tm_isdst = -1;
+
+    return mktime(&t); /*mktime convierte una estructura tm a time_t*/
+}
+
+/*
+* Objetivo:calcular cuantos dias hay desde desde hasta
+* Entradas:desde, hasta - fechas "YYYY-MM-DD".
+* Salidas:diferencia en dias (hasta - desde). Positivo si 'hasta' es posterior. Devuelve LONG_MIN si alguna fecha es invalida.
+*/
+static long diasEntre(const char *desde, const char *hasta) {
+    time_t td = fechaATiempo(desde); /*td es la fecha de inicio en time_t*/
+    time_t th = fechaATiempo(hasta); /*th es la fecha de final en time_t*/
+
+    if (td == (time_t)-1 || th == (time_t)-1) {
+        return LONG_MIN; /*se devueve el long min que es el valor mas pequeño posible*/
+    }
+
+    double segundos = difftime(th, td); /*diferencia en segundos con difftime que hace la resta*/
+    return (long)(segundos / 86400.0); /*convertir a dias*/
+}
+/*
+* Objetivo:  imprimir la lista de ejemplares de un prestamo (nombre + id).
+* Entradas:  jEjemplares - arreglo cJSON con los ids de ejemplar.
+* Salidas:   imprime cada ejemplar; nada si el arreglo es invalido.
+*/
+static void imprimirEjemplaresDe(cJSON *jEjemplares) {
+    if (!cJSON_IsArray(jEjemplares)) { /*si no es un arreglo*/
+        return;
+    }
+
+    int ne = cJSON_GetArraySize(jEjemplares); /*obtener el tamaño del arreglo*/
+    for (int k = 0; k < ne; k++) {
+        cJSON *item = cJSON_GetArrayItem(jEjemplares, k); /*obtener el elemento k del arreglo*/
+        if (!cJSON_IsString(item)) { /*si el elemento no es una cadena*/
+            continue; /* continuar con el siguiente elemento */
+        }
+
+        char *nombre = obtenerProduccionEjemplarJSON(item->valuestring); /*obtener el nombre del ejemplar*/
+        if (nombre != NULL) {
+            printf("- %s  (id: %s)\n", nombre, item->valuestring);
+            free(nombre); /*se libera la memoria del nombre*/
+        } else {
+            printf("- ?  (id: %s)\n", item->valuestring);
+        }
+    }
+}
+
+/*
+* Objetivo:mostrar los prestamos vencidos y los proximos a vencer(fecha de entrega de 0 a 5 dias respecto de hoy).
+* Entradas:ninguna (usa la fecha del sistema).
+* Salidas:imprime id, usuario, fecha de entrega, estatus y ejemplares.
+* Restricciones: solo considera prestamos con estado "activo".
+*/
+void mostrarVencimientoPrestamos(void) {
+
+    char *hoy = fechaHoy();
+    if (hoy == NULL) {
+        return;
+    }
+
+    FILE *archivo = fopen("data/prestamos.json", "r"); /*abrir el archivo en modo lectura*/
+    if (archivo == NULL) { /*si no se puede abrir el archivo*/
+        printf("No hay prestamos registrados.\n"); /*imprimir mensaje de error*/
+        free(hoy);
+        return;
+    }
+
+    char *contenido = leerArchivoCompleto(archivo); /*leer el contenido del archivo*/
+    fclose(archivo);
+
+    cJSON *raiz = cJSON_Parse(contenido); /*parsear el contenido como JSON*/
+    free(contenido);
+
+    if (!cJSON_IsArray(raiz)) {
+        printf("No hay prestamos registrados.\n");
+        cJSON_Delete(raiz);
+        free(hoy);
+        return;
+    }
+
+    printf("\n==== VENCIMIENTO DE PRESTAMOS ====\n");
+
+    int mostrados = 0;
+    int total = cJSON_GetArraySize(raiz);
+    for (int i = 0; i < total; i++) {
+
+        /* p es un prestamo , JEstado es el objeto JSON del estado , JEntrega es el objeto JSON de la fecha de entrega */
+        cJSON *p = cJSON_GetArrayItem(raiz, i);
+
+        cJSON *jEstado  = cJSON_GetObjectItem(p, "estado");
+        cJSON *jEntrega = cJSON_GetObjectItem(p, "fecha_entrega");
+
+        // solo prestamos activos
+        if (!cJSON_IsString(jEstado) || strcmp(jEstado->valuestring, "activo") != 0) {
+            continue;
+        }
+        if (!cJSON_IsString(jEntrega)) {
+            continue;
+        }
+
+        const char *fEntrega = jEntrega->valuestring; 
+        long dias = diasEntre(hoy, fEntrega);   // dias desde hoy hasta la entrega
+        if (dias == LONG_MIN) {
+            continue;
+        }
+
+        // clasificar
+        const char *estatus;
+        if (dias < 0) {
+            estatus = "vencido";
+        } else if (dias <= 5) {
+            estatus = "proximo a vencer";
+        } else {
+            continue;   // falta mas de 5 dias, nada
+        }
+
+        // datos
+        cJSON *jId         = cJSON_GetObjectItem(p, "id");
+        cJSON *jUsuario    = cJSON_GetObjectItem(p, "usuario");
+        cJSON *jEjemplares = cJSON_GetObjectItem(p, "ejemplares");
+
+        int id = 0;
+        if (cJSON_IsNumber(jId)) {
+            id = jId->valueint;
+        }
+
+        const char *usuario;
+        if (cJSON_IsString(jUsuario)) { /*el dato esta bien*/
+            usuario = jUsuario->valuestring;
+        } else {
+            usuario = "?";  /*el dato esta mal, se usa ? */
+        }
+
+        printf("\n--------------------------------------------------\n");
+        printf("Prestamo #%d\n", id);
+        printf("Usuario: %s\n", usuario);
+        printf("Fecha entrega: %s\n", fEntrega);
+        printf("Estatus: %s\n", estatus);
+        printf("Ejemplares:\n");
+        imprimirEjemplaresDe(jEjemplares);
+
+        mostrados++;
+    }
+
+    if (mostrados == 0) {
+        printf("\nNo hay prestamos vencidos ni proximos a vencer.\n");
+    }
+    printf("==================================================\n");
 
     cJSON_Delete(raiz);
     free(hoy);
