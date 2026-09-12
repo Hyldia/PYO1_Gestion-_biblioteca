@@ -160,7 +160,7 @@ void registrarDevolucion(void) {
         "===================================\n"
     );
 
-    if(finalizarPrestamoJSON(idPrestamo, fecha)){
+    if(finalizarPrestamoJSON(idPrestamo, fecha, total)){
         printf("---------------------------------\n");
         printf("Devolucion registrada con exito.\n");
         printf("Fecha devolucion: %s\n", fecha);
