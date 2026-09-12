@@ -29,11 +29,13 @@ char *obtenerProduccionEjemplarJSON(const char *idEjemplar);
 
 // Devoluciones
 int existePrestamoActivoJSON(int idPrestamo);
-int finalizarPrestamoJSON(int idPrestamo, const char *fechaDevoucion);
+int finalizarPrestamoJSON(int idPrestamo, const char *fechaDevoucion, int monto);
 
 // Fechas para tarifa devolucion
 int obtenerFechasPrestamoJSON(int idPrestamo, char *fechaInicio, char *fechaEntrega);
 
 char *leerArchivoCompleto(FILE *archivo);
+
+char *obtenerGeneroProduccionJSON(const char *nombre);
 
 #endif
