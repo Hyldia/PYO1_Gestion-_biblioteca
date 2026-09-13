@@ -36,7 +36,7 @@ void busquedaSimple(void) {
     char *datoLower = aMinusculas(dato);
 
     int total = 0;
-    ResultadoBusquedaEjemplar **resultados = buscarEjemplarSimple(dato, &total);//llama a la funcion buscarEjemplarSimple para realizar la busqueda y obtener los resultados
+    ResultadoBusquedaEjemplar **resultados = buscarEjemplarSimple(datoLower, &total);//llama a la funcion buscarEjemplarSimple para realizar la busqueda y obtener los resultados
 
     if (resultados == NULL || total == 0) {
         printf("\n--------------------------------------------------\n");
