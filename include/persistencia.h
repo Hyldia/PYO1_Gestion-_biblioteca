@@ -29,7 +29,10 @@ char *obtenerProduccionEjemplarJSON(const char *idEjemplar);
 
 // Devoluciones
 int existePrestamoActivoJSON(int idPrestamo);
-int finalizarPrestamoJSON(int idPrestamo, const char *fechaDevoucion);
+int finalizarPrestamoJSON(int idPrestamo, const char *fechaDevoucion, int monto);
+
+// Fechas para tarifa devolucion
+int obtenerFechasPrestamoJSON(int idPrestamo, char *fechaInicio, char *fechaEntrega);
 
 char *leerArchivoCompleto(FILE *archivo);
 
@@ -40,5 +43,6 @@ ResultadoBusquedaEjemplar** buscarEjemplarAvanzado(const parametrosBusquedaAvanz
 //auxiliar busquedas
 char *aMinusculas(const char *cadena);
 int compararTexto(const char *texto, const char *parametro, int modo);
+char *obtenerGeneroProduccionJSON(const char *nombre);
 
 #endif

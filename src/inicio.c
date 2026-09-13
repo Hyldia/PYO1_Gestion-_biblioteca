@@ -6,6 +6,7 @@
 #include "catalogo.h"
 #include "devoluciones.h"
 #include "busquedas.h"
+#include "estadisticas.h"
 
 /*
 * Objetivo: leer un numero de opcion de la consola y limpiar el resto de la linea.
@@ -151,10 +152,10 @@ static void menuOperativas(void) {
                 }
                 break;
             case 4:
-                printf("\n(Pendiente)\n");
+                mostrarVencimientoPrestamos();
                 break;
             case 5:
-                printf("\n(Pendiente)\n");
+                mostrarEstadisticas();
                 break;
             case 0:
                 printf("Volviendo al menu principal...\n");

@@ -732,8 +732,9 @@ char *obtenerProduccionEjemplarJSON(const char *idEjemplar) {
     return nombre;
 }
 
+/*--------------------Devolucoiones-------------------------------*/
+
 /*
-2
 * Objetivo: Buscar un prestamo activo segun su ID.
 * Entradas: Identificador del prestamo.
 * Salidas:
@@ -766,6 +767,43 @@ int existePrestamoActivoJSON(int idPrestamo){
 }
 
 /*
+* Objetivo: Obtener las fechas asociadas a un préstamo.
+* Entradas: Identificador del préstamo.
+* Salidas: FechaInicio y fechaEntrega.
+* Retorna:
+    - 1 si encuentra el préstamo.
+    - 0 si no existe.
+*/
+int obtenerFechasPrestamoJSON(int idPrestamo, char *fechaInicio, char *fechaEntrega){
+    cJSON *raiz = cargarArchivoJSON("data/prestamos.json");
+    if(!cJSON_IsArray(raiz)){
+        cJSON_Delete(raiz);
+        return 0;
+    }
+    int cantidad = cJSON_GetArraySize(raiz);
+    for(int i = 0; i < cantidad; i++){
+        cJSON *prestamo = cJSON_GetArrayItem(raiz, i);
+        cJSON *id = cJSON_GetObjectItem(prestamo, "id");
+
+        if(!cJSON_IsNumber(id)){
+            continue;
+        }
+        if(id->valueint == idPrestamo){
+            cJSON *inicio = cJSON_GetObjectItem(prestamo, "fecha_inicio");
+            cJSON *entrega = cJSON_GetObjectItem(prestamo, "fecha_entrega");
+            if(cJSON_IsString(inicio) && cJSON_IsString(entrega)){
+                strcpy(fechaInicio, inicio->valuestring);
+                strcpy(fechaEntrega, entrega->valuestring);
+                cJSON_Delete(raiz);
+                return 1;
+            }
+        }
+    }
+    cJSON_Delete(raiz);
+    return 0;
+}
+
+/*
 * Objetivo:  Registrar la devolucion de un prestamo.
 * Entradas: Identificador del prestamo y fechaDevolucion - fecha en formato YYYY-MM-DD.
 * Salidas:
@@ -776,7 +814,7 @@ int existePrestamoActivoJSON(int idPrestamo){
     - 1 si la operacion tuvo exito.
     - 0 si el prestamo no existe o ya fue finalizado.
 */
-int finalizarPrestamoJSON(int idPrestamo, const char *fechaDevolucion){
+int finalizarPrestamoJSON(int idPrestamo, const char *fechaDevolucion, int monto){
     cJSON *raiz = cargarArchivoJSON("data/prestamos.json");
     if(!cJSON_IsArray(raiz)){
         cJSON_Delete(raiz);
@@ -795,6 +833,9 @@ int finalizarPrestamoJSON(int idPrestamo, const char *fechaDevolucion){
         }
         cJSON_ReplaceItemInObject(prestamo, "estado", cJSON_CreateString("finalizado")); // cambia el estado del prestamo de activo a finalizado
         cJSON_AddStringToObject(prestamo, "fecha_devolucion", fechaDevolucion); // registra la fecha real en que se realizo la devolucion
+
+        cJSON_AddNumberToObject(prestamo, "monto", monto); // registra el monto de la devolucion
+        
         cJSON *ejemplares = cJSON_GetObjectItem(prestamo, "ejemplares"); // obtiene la lista de ejemplares asociados al prestamo
 
         if(cJSON_IsArray(ejemplares)){
@@ -1122,4 +1163,36 @@ int compararTexto(const char *texto, const char *parametro, int modo) {
     free(textoLower);
     free(parametroLower);
     return resultado;
+}
+/*estadisticas*/
+/*
+* Objetivo:obtener el genero de una produccion por su nombre.
+* Entradas:nombre - nombre de la produccion.
+* Salidas: puntero malloc con el genero (el que llama lo libera con free),o NULL si la produccion no existe.
+*/
+char *obtenerGeneroProduccionJSON(const char *nombre) {
+    cJSON *raiz = cargarArchivoJSON("data/catalogo.json"); /*cargar el archivo JSON del catálogo*/
+    if (!cJSON_IsArray(raiz)) {
+        cJSON_Delete(raiz);
+        return NULL; /*SI NO ES UN ARREGLO, RETORNAR NULL*/
+    }
+
+    char *genero = NULL;
+    int cantidad = cJSON_GetArraySize(raiz);
+    for (int i = 0; i < cantidad && genero == NULL; i++) {
+        cJSON *prod = cJSON_GetArrayItem(raiz, i);
+        cJSON *jNombre = cJSON_GetObjectItem(prod, "nombre");
+        if (cJSON_IsString(jNombre) && strcmp(jNombre->valuestring, nombre) == 0) { /*para saber si es la nombre que buscamos*/
+            cJSON *jGenero = cJSON_GetObjectItem(prod, "genero");
+            if (cJSON_IsString(jGenero)) { /*si el genero es una cadena de caracteres*/
+                genero = malloc(strlen(jGenero->valuestring) + 1);
+                if (genero != NULL) {
+                    strcpy(genero, jGenero->valuestring);
+                }
+            }
+        }
+    }
+
+    cJSON_Delete(raiz); /*liberar la memoria del JSON*/
+    return genero;
 }
