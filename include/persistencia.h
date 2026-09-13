@@ -36,6 +36,13 @@ int obtenerFechasPrestamoJSON(int idPrestamo, char *fechaInicio, char *fechaEntr
 
 char *leerArchivoCompleto(FILE *archivo);
 
+//busquedas
+ResultadoBusquedaEjemplar** buscarEjemplarSimple(const char *dato, int *total_encontrados);
+ResultadoBusquedaEjemplar** buscarEjemplarAvanzado(const parametrosBusquedaAvanzada *crit, int *total_encontrados);
+
+//auxiliar busquedas
+char *aMinusculas(const char *cadena);
+int compararTexto(const char *texto, const char *parametro, int modo);
 char *obtenerGeneroProduccionJSON(const char *nombre);
 
 #endif

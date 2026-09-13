@@ -10,6 +10,7 @@
 #include <string.h>
 #include "persistencia.h"
 #include <cjson/cJSON.h>
+#include <ctype.h>
 
 /*
 * Lee todo el contenido de un archivo y lo almacena en memoria dinamica
@@ -887,6 +888,282 @@ int tieneRegistrosAsociados(const char *identificacion){
     return 0;
 }
 
+
+/*
+* Busca ejemplares simples segun un dato de busqueda
+* Retorna un array de punteros a ResultadoBusquedaEjemplar y actualiza el total de encontrados
+*/
+ResultadoBusquedaEjemplar** buscarEjemplarSimple(const char *dato, int *total_encontrados) {
+    *total_encontrados = 0;
+    if (dato == NULL || strlen(dato) == 0) return NULL;
+
+    FILE *fCatalogo = fopen("data/catalogo.json", "r");
+    if (!fCatalogo) return NULL;//si no se puede abrir el archivo catalogo.json retorna NULL
+
+    fseek(fCatalogo, 0, SEEK_END);
+    long sizeCatalogo = ftell(fCatalogo);//obtiene el tamaño del archivo
+    fseek(fCatalogo, 0, SEEK_SET);
+
+    char *bufferCatalogo = (char *)malloc((size_t)sizeCatalogo + 1);//reserva memoria para el buffer del archivo catalogo.json
+    if (!bufferCatalogo) { fclose(fCatalogo); return NULL; }
+    fread(bufferCatalogo, 1, (size_t)sizeCatalogo, fCatalogo);//lee el archivo catalogo.json y lo guarda en el buffer
+    bufferCatalogo[sizeCatalogo] = '\0';
+    fclose(fCatalogo);
+
+    cJSON *raizCatalogo = cJSON_Parse(bufferCatalogo);
+    free(bufferCatalogo); 
+    if (!raizCatalogo) return NULL;
+
+    FILE *fEjem = fopen("data/ejemplares.json", "r");
+    if (!fEjem) { cJSON_Delete(raizCatalogo); return NULL; }
+
+    fseek(fEjem, 0, SEEK_END);//mueve el puntero del archivo al final
+    long sizeEjemplar = ftell(fEjem);
+    fseek(fEjem, 0, SEEK_SET);//mueve el puntero del archivo al inicio
+
+    char *bufferEjemplar = (char *)malloc((size_t)sizeEjemplar + 1);//reserva memoria para el buffer del archivo ejemplares.json
+    if (!bufferEjemplar) { fclose(fEjem); cJSON_Delete(raizCatalogo); return NULL; }
+    fread(bufferEjemplar, 1, (size_t)sizeEjemplar, fEjem);
+    bufferEjemplar[sizeEjemplar] = '\0';
+    fclose(fEjem);
+
+    cJSON *raizEjemplar = cJSON_Parse(bufferEjemplar);
+    free(bufferEjemplar); 
+    if (!raizEjemplar) { cJSON_Delete(raizCatalogo); return NULL; }
+
+    ResultadoBusquedaEjemplar **resultados = NULL;
+    int cantCatalogo = cJSON_GetArraySize(raizCatalogo);
+    int cantEjem = cJSON_GetArraySize(raizEjemplar);
+
+    for (int i = 0; i < cantCatalogo; i++) {//recorre el catalogo de producciones
+        cJSON *prod = cJSON_GetArrayItem(raizCatalogo, i);
+        cJSON *nombre = cJSON_GetObjectItem(prod, "nombre");
+        cJSON *autor = cJSON_GetObjectItem(prod, "autor");
+        cJSON *resumen = cJSON_GetObjectItem(prod, "resumen");
+
+        const char *strNombre = (nombre && nombre->valuestring) ? nombre->valuestring : "";
+        const char *strAutor = (autor && autor->valuestring) ? autor->valuestring : "";
+        const char *strResumen = (resumen && resumen->valuestring) ? resumen->valuestring : "";
+        
+        // Convertir a minúsculas para búsqueda case-insensitive
+        char *nombreLower = aMinusculas(strNombre);
+        char *autorLower = aMinusculas(strAutor);
+        char *resumenLower = aMinusculas(strResumen);
+
+        if (strstr(nombreLower, dato) != NULL ||
+            strstr(autorLower, dato) != NULL  ||
+            strstr(resumenLower, dato) != NULL) {
+
+            for (int j = 0; j < cantEjem; j++) {//recorre los ejemplares para buscar los que coincidan con la produccion encontrada
+                cJSON *ejem = cJSON_GetArrayItem(raizEjemplar, j);
+                cJSON *prodEjem = cJSON_GetObjectItem(ejem, "produccion");
+
+                // Convertir a minúsculas para comparación case-insensitive
+                char *prodEjemLower = aMinusculas(prodEjem && prodEjem->valuestring ? prodEjem->valuestring : "");
+                int esIgual = (strcmp(prodEjemLower, nombreLower) == 0);
+                free(prodEjemLower);
+
+                if (prodEjem && prodEjem->valuestring && esIgual) {
+                    cJSON *idEjem = cJSON_GetObjectItem(ejem, "id");
+                    cJSON *estEjemplar = cJSON_GetObjectItem(ejem, "estado");
+
+                    ResultadoBusquedaEjemplar **tmp = (ResultadoBusquedaEjemplar **)realloc(
+                        resultados, (size_t)(*total_encontrados + 1) * sizeof(ResultadoBusquedaEjemplar *)
+                    );
+                    if (!tmp) break;
+                    resultados = tmp;
+
+                    ResultadoBusquedaEjemplar *nuevo = (ResultadoBusquedaEjemplar *)malloc(sizeof(ResultadoBusquedaEjemplar));
+                    if (nuevo) {
+                        nuevo->id_ejemplar       = strdup(idEjem && idEjem->valuestring ? idEjem->valuestring : "N/A");
+                        nuevo->nombre_produccion = strdup(strNombre);
+                        nuevo->resumen           = strdup(strResumen);
+                        nuevo->estado            = strdup(estEjemplar && estEjemplar->valuestring ? estEjemplar->valuestring : "N/A");
+
+                        resultados[*total_encontrados] = nuevo;
+                        (*total_encontrados)++;
+                    }
+                }
+            }
+        }
+
+        // Liberar las cadenas temporales
+        free(nombreLower);
+        free(autorLower);
+        free(resumenLower);
+    }
+
+    cJSON_Delete(raizCatalogo);
+    cJSON_Delete(raizEjemplar);
+
+    return resultados; 
+}
+
+/*
+* Realiza una busqueda avanzada de ejemplares en el catálogo.
+* Los criterios de busqueda se especifican en la estructura parametrosBusquedaAvanzada.
+* Devuelve un arreglo dinamico de punteros a ResultadoBusquedaEjemplar que cumplen con los criterios.
+* El numero total de resultados encontrados se almacena en total_encontrados.
+* Es responsabilidad del llamador liberar la memoria de los resultados.
+*/
+ResultadoBusquedaEjemplar** buscarEjemplarAvanzado(const parametrosBusquedaAvanzada *crit, int *total_encontrados) {
+    *total_encontrados = 0;
+    if (!crit) return NULL;
+
+    FILE *fCatalogo = fopen("data/catalogo.json", "r");
+    if (!fCatalogo) return NULL;
+
+    fseek(fCatalogo, 0, SEEK_END);
+    long sizeCatalogo = ftell(fCatalogo);
+    fseek(fCatalogo, 0, SEEK_SET);
+
+    char *bufferCatalogo = (char *)malloc((size_t)sizeCatalogo + 1);
+    if (!bufferCatalogo) { fclose(fCatalogo); return NULL; }
+    fread(bufferCatalogo, 1, (size_t)sizeCatalogo, fCatalogo);
+    bufferCatalogo[sizeCatalogo] = '\0';
+    fclose(fCatalogo);
+
+    cJSON *raizCatalogo = cJSON_Parse(bufferCatalogo);
+    free(bufferCatalogo);
+    if (!raizCatalogo) return NULL;
+
+    FILE *fEjem = fopen("data/ejemplares.json", "r");
+    if (!fEjem) { cJSON_Delete(raizCatalogo); return NULL; }
+
+    fseek(fEjem, 0, SEEK_END);
+    long sizeEjemplar = ftell(fEjem);
+    fseek(fEjem, 0, SEEK_SET);
+
+    char *bufferEjemplar = (char *)malloc((size_t)sizeEjemplar + 1);
+    if (!bufferEjemplar) { fclose(fEjem); cJSON_Delete(raizCatalogo); return NULL; }
+    fread(bufferEjemplar, 1, (size_t)sizeEjemplar, fEjem);
+    bufferEjemplar[sizeEjemplar] = '\0';
+    fclose(fEjem);
+
+    cJSON *raizEjemplar = cJSON_Parse(bufferEjemplar);
+    free(bufferEjemplar);
+    if (!raizEjemplar) { cJSON_Delete(raizCatalogo); return NULL; }
+
+    ResultadoBusquedaEjemplar **resultados = NULL;
+    int cantCatalogo = cJSON_GetArraySize(raizCatalogo);
+    int cantEjem = cJSON_GetArraySize(raizEjemplar);
+
+    for (int i = 0; i < cantCatalogo; i++) {
+        cJSON *prod = cJSON_GetArrayItem(raizCatalogo, i);
+        cJSON *nombre  = cJSON_GetObjectItem(prod, "nombre");
+        cJSON *autor   = cJSON_GetObjectItem(prod, "autor");
+        cJSON *genero  = cJSON_GetObjectItem(prod, "genero");
+        cJSON *resumen = cJSON_GetObjectItem(prod, "resumen");
+
+        const char *strNombre  = (nombre  && nombre->valuestring)  ? nombre->valuestring  : "";
+        const char *strAutor   = (autor   && autor->valuestring)   ? autor->valuestring   : "";
+        const char *strGenero  = (genero  && genero->valuestring)  ? genero->valuestring  : "";
+        const char *strResumen = (resumen && resumen->valuestring) ? resumen->valuestring : "";
+
+        // Evaluamos cada campo activo (retorna 1 si coincide, 0 si no, -1 si no se evaluó)
+        int resNombre  = compararTexto(strNombre,  crit->nombre,  crit->modo_nombre);
+        int resAutor   = compararTexto(strAutor,   crit->autor,   crit->modo_autor);
+        int resGenero  = compararTexto(strGenero,  crit->genero,  crit->modo_genero);
+        int resResumen = compararTexto(strResumen, crit->resumen, crit->modo_resumen);
+
+        int cumple = 0;
+
+        if (crit->operador_logico == 1) { 
+            // Operador Y (AND): Todos los campos especificados deben ser 1
+            cumple = 1;
+            if (resNombre  != -1 && resNombre  == 0) cumple = 0;
+            if (resAutor   != -1 && resAutor   == 0) cumple = 0;
+            if (resGenero  != -1 && resGenero  == 0) cumple = 0;
+            if (resResumen != -1 && resResumen == 0) cumple = 0;
+        } else { 
+            // Operador O (OR): Al menos un campo especificado debe ser 1
+            cumple = 0;
+            if (resNombre  == 1) cumple = 1;
+            if (resAutor   == 1) cumple = 1;
+            if (resGenero  == 1) cumple = 1;
+            if (resResumen == 1) cumple = 1;
+        }
+
+        if (cumple) {
+            for (int j = 0; j < cantEjem; j++) {
+                cJSON *ejem = cJSON_GetArrayItem(raizEjemplar, j);
+                cJSON *prodEjem = cJSON_GetObjectItem(ejem, "produccion");
+
+                if (prodEjem && prodEjem->valuestring && strcmp(prodEjem->valuestring, strNombre) == 0) {
+                    cJSON *idEjem = cJSON_GetObjectItem(ejem, "id");
+                    cJSON *estEjemplar = cJSON_GetObjectItem(ejem, "estado");
+
+                    ResultadoBusquedaEjemplar **tmp = (ResultadoBusquedaEjemplar **)realloc(
+                        resultados, (size_t)(*total_encontrados + 1) * sizeof(ResultadoBusquedaEjemplar *)
+                    );
+                    if (!tmp) break;
+                    resultados = tmp;
+
+                    ResultadoBusquedaEjemplar *nuevo = (ResultadoBusquedaEjemplar *)malloc(sizeof(ResultadoBusquedaEjemplar));
+                    if (nuevo) {
+                        nuevo->id_ejemplar       = strdup(idEjem && idEjem->valuestring ? idEjem->valuestring : "N/A");
+                        nuevo->nombre_produccion = strdup(strNombre);
+                        nuevo->resumen           = strdup(strResumen);
+                        nuevo->estado            = strdup(estEjemplar && estEjemplar->valuestring ? estEjemplar->valuestring : "N/A");
+
+                        resultados[*total_encontrados] = nuevo;
+                        (*total_encontrados)++;
+                    }
+                }
+            }
+        }
+    }
+
+    cJSON_Delete(raizCatalogo);
+    cJSON_Delete(raizEjemplar);
+
+    return resultados;
+}
+
+/*
+ * Convierte una cadena a minúsculas
+ * Retorna una nueva cadena en memoria dinámica
+ * La memoria debe ser liberada con free()
+ */
+char *aMinusculas(const char *str) {
+    if (!str) return NULL;
+    char *lower = strdup(str);
+    if (!lower) return NULL;
+    for (int i = 0; lower[i]; i++) {
+        lower[i] = (char)tolower((unsigned char)lower[i]);
+    }
+    return lower;
+}
+
+/*
+ * Compara dos textos segun el modo de busqueda
+ * modo = 1: busqueda de "contiene"
+ * modo = 2: busqueda exacta
+ * Retorna: 1 si coincide, 0 si no coincide, -1 si parametro esta vacio (no se evalua)
+ */
+int compararTexto(const char *texto, const char *parametro, int modo) {
+    // Si el parametro está vacio, retornar -1 (no se evaluo este campo)
+    if (!parametro || strlen(parametro) == 0) return -1;
+    
+    // Si texto esta vacio pero parametro no, no coincide
+    if (!texto) return 0;
+    
+    char *textoLower = aMinusculas(texto);
+    char *parametroLower = aMinusculas(parametro);
+    int resultado = 0;
+    
+    if (modo == 1) {
+        //busqueda contiene
+        resultado = (strstr(textoLower, parametroLower) != NULL) ? 1 : 0;
+    } else if (modo == 2) {
+        //busqueda exacta
+        resultado = (strcmp(textoLower, parametroLower) == 0) ? 1 : 0;
+    }
+    
+    free(textoLower);
+    free(parametroLower);
+    return resultado;
+}
 /*estadisticas*/
 /*
 * Objetivo:obtener el genero de una produccion por su nombre.

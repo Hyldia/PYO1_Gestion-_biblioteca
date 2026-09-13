@@ -43,4 +43,28 @@ typedef struct {
     char **ejemplares; 
     int cantidad_ejemplares;
 } Prestamo;
+
+typedef struct {
+    char *id_ejemplar;
+    char *nombre_produccion;
+    char *resumen;
+    char *estado;
+} ResultadoBusquedaEjemplar;
+
+typedef struct {
+    char nombre[MAX_RUTA];
+    int modo_nombre; // 1: Contiene, 2: Exacta
+    
+    char autor[MAX_RUTA];
+    int modo_autor;
+    
+    char genero[MAX_RUTA];
+    int modo_genero;
+    
+    char resumen[MAX_RUTA];
+    int modo_resumen;
+    
+    int operador_logico; // 1: AND (Y), 2: OR (O)
+} parametrosBusquedaAvanzada;
+
 #endif

@@ -5,6 +5,7 @@
 #include "usuarios.h"
 #include "catalogo.h"
 #include "devoluciones.h"
+#include "busquedas.h"
 #include "estadisticas.h"
 
 /*
@@ -72,10 +73,10 @@ static void menuGenerales(void) {
 
         switch (opcion) {
             case 1: 
-                printf("\n(Pendiente)\n");
+                busquedaSimple();
                 break;
-            case 2: 
-                printf("\n(Pendiente)\n");
+            case 2:
+                busquedaAvanzada();
                 break;
             case 3:
                 registrarPrestamo();
