@@ -19,4 +19,11 @@
 		"genero":	"Novela romántica",
 		"resumen":	"La historia sigue Elizabeth Bennet mientras",
 		"cantidad":	2
+	}, {
+		"nombre":	"El nombre de la rosa",
+		"autor":	"Umberto Eco",
+		"anio_publicacion":	1980,
+		"genero":	"Misterio histórico",
+		"resumen":	"Un fraile franciscano investiga una serie de muertes misteriosas en una abadía benedictina del siglo XIV.",
+		"cantidad":	3
 	}]

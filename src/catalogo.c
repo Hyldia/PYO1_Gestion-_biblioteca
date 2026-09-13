@@ -199,12 +199,16 @@ void agregarLote(void) {
 
     fclose(archivo);
 
-    printf("\n==================================================\n");
+    printf("\n============================================================================\n");
     printf("Carga finalizada.\n");
     printf("Registros procesados con éxito: %d\n", procesados);
     printf("Registros no procesados/omitidos: %d\n", no_procesados);
-    printf("==================================================\n");
-    
+    printf("============================================================================\n");
+    printf("El formato del archivo del lote debe ser:\n");
+    printf("Nombre#Autor#Año#Género#Resumen#CantidadEjemplares\n");
+    printf("Por favor, verifique el archivo que contiene el lote ingresado.\n");
+    printf("============================================================================\n");
+
     free(linea);
     free(ruta);
 }
