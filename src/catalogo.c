@@ -79,6 +79,7 @@ void agregarLote(void) {
     int procesados = 0;//cantidad de registros procesados exitosamente
     int no_procesados = 0;//cantidad de registros no procesados por errores de validacion
     int numero_linea = 0;//numero de linea actual del archivo de texto plano
+    int tieneRegistros = 0;//indica si el archivo contiene al menos un registro no vacio
 
     printf("\n--- Procesando Archivo de Lote ---\n");
 
@@ -87,6 +88,7 @@ void agregarLote(void) {
         linea[strcspn(linea, "\r\n")] = 0; // Limpiar saltos de linea Windows/Linux
 
         if (!validarCampoNoVacio(linea)) continue;//si la linea esta 100% vacia se ignora
+            tieneRegistros = 1;
 
         Produccion prod;//estructura para almacenar los datos de la produccion
         prod.nombre = NULL;//inicializa los punteros a NULL para evitar errores de memoria
@@ -203,6 +205,9 @@ void agregarLote(void) {
     printf("Carga finalizada.\n");
     printf("Registros procesados con éxito: %d\n", procesados);
     printf("Registros no procesados/omitidos: %d\n", no_procesados);
+        if (!tieneRegistros) {
+            printf("El archivo de texto plano está vacío. Por favor, revise el archivo.\n");
+        }
     printf("============================================================================\n");
     printf("El formato del archivo del lote debe ser:\n");
     printf("Nombre#Autor#Año#Género#Resumen#CantidadEjemplares\n");
