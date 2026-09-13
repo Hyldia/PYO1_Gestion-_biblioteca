@@ -1,0 +1,21 @@
+[{
+		"identificacion":	"123456789",
+		"nombre":	"carlos",
+		"direccion":	"limon"
+	}, {
+		"identificacion":	"987656789",
+		"nombre":	"maria",
+		"direccion":	"liverpol"
+	}, {
+		"identificacion":	"987654321",
+		"nombre":	"sofia",
+		"direccion":	"Limoncito"
+	}, {
+		"identificacion":	"702810276",
+		"nombre":	"dei",
+		"direccion":	"Limon"
+	}, {
+		"identificacion":	"121212129",
+		"nombre":	"Maxin",
+		"direccion":	"Limoncito"
+	}]

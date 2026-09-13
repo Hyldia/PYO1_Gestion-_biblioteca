@@ -1,0 +1,69 @@
+[{
+		"id":	1,
+		"usuario":	"123456789",
+		"fecha_inicio":	"2026-09-10",
+		"fecha_entrega":	"2026-09-20",
+		"estado":	"finalizado",
+		"ejemplares":	["1984- 1"],
+		"fecha_devolucion":	"2026-09-10",
+		"monto":	1500
+	}, {
+		"id":	2,
+		"usuario":	"123456789",
+		"fecha_inicio":	"2026-12-01",
+		"fecha_entrega":	"2026-12-12",
+		"estado":	"finalizado",
+		"ejemplares":	["Orgullo y prejuicio- 2"],
+		"fecha_devolucion":	"2026-09-11",
+		"monto":	1650
+	}, {
+		"id":	3,
+		"usuario":	"123456789",
+		"fecha_inicio":	"2026-11-12",
+		"fecha_entrega":	"2026-11-20",
+		"estado":	"finalizado",
+		"ejemplares":	["Cien años de soledad- 3"],
+		"fecha_devolucion":	"26-09-10",
+		"monto":	1200
+	}, {
+		"id":	4,
+		"usuario":	"702810276",
+		"fecha_inicio":	"2026-06-12",
+		"fecha_entrega":	"2026-12-12",
+		"estado":	"activo",
+		"ejemplares":	["Cien años de soledad- 1"]
+	}, {
+		"id":	5,
+		"usuario":	"702810276",
+		"fecha_inicio":	"2026-10-09",
+		"fecha_entrega":	"2026-11-05",
+		"estado":	"finalizado",
+		"ejemplares":	["Cien años de soledad- 3"],
+		"fecha_devolucion":	"2026-09-11",
+		"monto":	2600
+	}, {
+		"id":	6,
+		"usuario":	"702810276",
+		"fecha_inicio":	"2026-09-01",
+		"fecha_entrega":	"2026-09-10",
+		"estado":	"finalizado",
+		"ejemplares":	["Cien años de soledad- 3"],
+		"fecha_devolucion":	"2026-09-12",
+		"monto":	1500
+	}, {
+		"id":	7,
+		"usuario":	"702810276",
+		"fecha_inicio":	"2027-11-11",
+		"fecha_entrega":	"2028-11-12",
+		"estado":	"activo",
+		"ejemplares":	["Cien años de soledad- 4", "1984- 3"]
+	}, {
+		"id":	8,
+		"usuario":	"123456789",
+		"fecha_inicio":	"2026-09-12",
+		"fecha_entrega":	"2026-09-22",
+		"estado":	"finalizado",
+		"ejemplares":	["Cien años de soledad- 2"],
+		"fecha_devolucion":	"2026-09-12",
+		"monto":	1500
+	}]
